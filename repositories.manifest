@@ -3,13 +3,13 @@ summary: MoltenVK project repository
 
 :
 role: prerequisite
-type: dir
-location: ../build2-Vulkan-Headers/
+type: git
+location: https://github.com/helmesjo/build2-Vulkan-Headers.git#main
 
 :
 role: prerequisite
-type: dir
-location: ../build2-SPIRV-Cross/
+type: git
+location: https://github.com/helmesjo/build2-SPIRV-Cross.git#main
 
 :
 role: prerequisite
