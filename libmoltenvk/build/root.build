@@ -2,7 +2,12 @@
 #
 #cxx.internal.scope = current
 
-cxx.std = latest
+# Pinned to 17, matching upstream's own CMAKE_CXX_STANDARD/CXX_STANDARD_REQUIRED
+# (CMakeLists.txt). cxx.std=latest (Apple clang defaulting to a newer draft
+# standard) triggers hard errors in Apple's own CoreGraphics/ColorSync system
+# headers (invalid arithmetic between different enumeration types) that don't
+# occur under c++17 -- an SDK header issue, not a MoltenVK one.
+cxx.std = 17
 
 using c
 using c.objc   # MTLSamplerDescriptor+MoltenVK.m and friends (plain Objective-C).
