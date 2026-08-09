@@ -1,0 +1,5 @@
+: create-device
+:
+: Create a Vulkan instance and device through MoltenVK's ICD entry points.
+:
+$* 2>!
