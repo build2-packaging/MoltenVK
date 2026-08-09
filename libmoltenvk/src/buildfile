@@ -102,6 +102,21 @@ cxx.poptions += $moltenvk_defs
 if ($cxx.id == 'clang')
   cxx.coptions += -Wno-deprecated-declarations -Wno-vla-cxx-extension
 
+# mvkGitRevDerived.h -- upstream's cmake/Templates/mvkGitRevDerived.h.in
+# template (symlinked), substituted with a static, version-derived value
+# instead of a live `git rev-parse` (the value is diagnostic-only, and a
+# live git command would make the build host- and checkout-dependent).
+#
+h{mvkGitRevDerived}: in{mvkGitRevDerived.h.in}
+h{mvkGitRevDerived}:
+{
+  in.symbol = '@'
+  in.substitutions = MVK_GIT_REV@"v$version"
+  install = false
+}
+
+lib{MoltenVK}: h{mvkGitRevDerived}
+
 # Export options.
 #
 lib{MoltenVK}:
