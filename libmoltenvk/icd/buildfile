@@ -1,0 +1,27 @@
+# The ICD json that lets libvulkan-loader discover MoltenVK as a driver.
+# Only substitution is the absolute lib install directory, matching
+# upstream's CMAKE_INSTALL_FULL_LIBDIR (Templates/cmake/MoltenVK_icd.json.in,
+# CMakeLists.txt: `configure_file(...) install(FILES ... DESTINATION
+# ${CMAKE_INSTALL_PREFIX}/etc/vulkan/icd.d)`). Like upstream's own CMake
+# build, the embedded library_path is an absolute, install-time-baked path
+# -- not relocatable (see ../PACKAGE-README.md).
+#
+assert (!$install.relocatable) 'relocatable installation not supported'
+
+# $install.resolve() is only callable once an install root is actually
+# configured (config.install.root) -- fall back to a placeholder during
+# ordinary dev builds/tests where no install is being performed; the in{}
+# rule regenerates the file automatically once a real install.root value
+# is substituted in (e.g. by `b install config.install.root=...`).
+#
+icd_libdir = ($null($install.root) ? [dir_path] '/unconfigured' : $install.resolve($install.lib))
+
+file{MoltenVK_icd.json}: in{MoltenVK_icd.json.in}
+file{MoltenVK_icd.json}:
+{
+  in.symbol = '@'
+  in.substitutions = CMAKE_INSTALL_FULL_LIBDIR@"$icd_libdir"
+  install = etc/vulkan/icd.d/
+}
+
+./: file{MoltenVK_icd.json}
