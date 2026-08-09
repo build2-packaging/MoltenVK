@@ -1,11 +1,11 @@
-pub_hdrs = {hxx ixx txx}{**}
+pub_hdrs = h{**}
 
 ./: $pub_hdrs
 
 # Install into the MoltenVK/ subdirectory of, say, /usr/include/
 # recreating subdirectories.
 #
-{hxx ixx txx}{*}:
+h{*}:
 {
   install         = include/MoltenVK/
   install.subdirs = true

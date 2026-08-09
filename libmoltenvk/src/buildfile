@@ -1,8 +1,21 @@
 intf_libs = # Interface dependencies.
 impl_libs = # Implementation dependencies.
-#import xxxx_libs += libhello%lib{hello}
 
-# Public headers.
+# Public API headers include <vulkan/vulkan.h> -- interface dependency.
+#
+import intf_libs += libvulkan-headers%lib{vulkan-headers}
+
+# SPIRV-Cross is only ever reached from internal .mm files (unqualified
+# #include <spirv_msl.hpp> et al) -- implementation dependency. See
+# ../manifest for the exact component/namespace configuration requested.
+#
+import impl_libs += libspirv-cross%lib{spirv-cross-core} \
+                     libspirv-cross%lib{spirv-cross-glsl} \
+                     libspirv-cross%lib{spirv-cross-msl}  \
+                     libspirv-cross%lib{spirv-cross-reflect}
+
+# Public headers (upstream's MoltenVK/include/MoltenVK/ symlink, flattened
+# from MoltenVK/MoltenVK/API/ -- see ../include/MoltenVK/buildfile).
 #
 pub = [dir_path] ../include/MoltenVK/
 
@@ -10,11 +23,24 @@ include $pub
 
 pub_hdrs = $($pub/ pub_hdrs)
 
-lib{moltenvk}: $pub/{$pub_hdrs}
-
-# Private headers and sources as well as dependencies.
+# lib{MoltenVK} -- mixed case, deliberately not lib{moltenvk}: the ICD
+# json's library_path and MoltenVK.pc.in's `-lMoltenVK` are hardcoded
+# literals upstream, and the wider Vulkan ecosystem expects exactly
+# libMoltenVK.dylib. See ../PACKAGE-README.md.
 #
-lib{moltenvk}: {hxx ixx txx cxx}{**} $impl_libs $intf_libs
+lib{MoltenVK}: $pub/{$pub_hdrs}
+
+# Private headers and sources: Common/, MoltenVKShaderConverter/, MoltenVK/
+# (symlinked from upstream -- see ../PACKAGING.md). MoltenVK/API/ is
+# excluded below since it's the exact same files already covered via the
+# public ../include/MoltenVK/ symlinks above.
+#
+lib{MoltenVK}: Common/{h cxx m mm}{*}                  \
+               MoltenVKShaderConverter/{h cxx m mm}{*} \
+               MoltenVK/{h hxx cxx}{** -API/**}        \
+               MoltenVK/m{** -API/**}                  \
+               MoltenVK/mm{** -API/**}                 \
+               $impl_libs $intf_libs
 
 # Build options.
 #
@@ -23,32 +49,91 @@ src_pfx_inc = [dir_path] $src_root/include/
 out_pfx_src = [dir_path] $out_root/src/
 src_pfx_src = [dir_path] $src_root/src/
 
-cxx.poptions =+ "-I$out_pfx_src" "-I$src_pfx_src" \
-                "-I$out_pfx_inc" "-I$src_pfx_inc"
+# Internal (private, non-exported) -I paths, mirroring upstream's own
+# target_include_directories(MoltenVK PRIVATE ...) list (MoltenVK/CMakeLists.txt)
+# plus Common/ (quoted #include "MVKOSExtensions.h" et al, a different
+# directory from the including files) and $out_base for the generated
+# mvkGitRevDerived.h.
+#
+moltenvk_ipaths = "-I$src_base/Common"              \
+                  "-I$src_base/MoltenVK/API"        \
+                  "-I$src_base/MoltenVK/Commands"   \
+                  "-I$src_base/MoltenVK/GPUObjects" \
+                  "-I$src_base/MoltenVK/Layers"     \
+                  "-I$src_base/MoltenVK/OS"         \
+                  "-I$src_base/MoltenVK/Utility"    \
+                  "-I$src_base/MoltenVK/Vulkan"     \
+                  "-I$out_base"
 
-#obja{*}: cxx.poptions += -DMOLTENVK_STATIC_BUILD
-#objs{*}: cxx.poptions += -DMOLTENVK_SHARED_BUILD
+c.poptions   =+ "-I$out_pfx_src" "-I$src_pfx_src" \
+                "-I$out_pfx_inc" "-I$src_pfx_inc" \
+                $moltenvk_ipaths
+
+cxx.poptions =+ "-I$out_pfx_src" "-I$src_pfx_src" \
+                "-I$out_pfx_inc" "-I$src_pfx_inc" \
+                $moltenvk_ipaths
+
+# Reproduce CMake's generated compile definitions (see ../PACKAGING.md and
+# upstream's Common/CMakeLists.txt and MoltenVK/CMakeLists.txt for the exact
+# source of each).
+#
+log_level_num = ($config.libmoltenvk.log_level == 'off'   ? 0 : \
+                  $config.libmoltenvk.log_level == 'error' ? 1 : \
+                  $config.libmoltenvk.log_level == 'warn'  ? 2 : \
+                  $config.libmoltenvk.log_level == 'info'  ? 3 : 4)
+
+moltenvk_defs = -DMVK_FRAMEWORK_VERSION=1.4.2 \
+                "-DMVK_CONFIG_LOG_LEVEL=$log_level_num" \
+                "-DMVK_USE_METAL_PRIVATE_API=($config.libmoltenvk.use_metal_private_api ? 1 : 0)"
+
+if $config.libmoltenvk.exclude_cereal
+  moltenvk_defs += -DMVK_USE_CEREAL=0
+
+if $config.libmoltenvk.exclude_spirv_tools
+  moltenvk_defs += -DMVK_EXCLUDE_SPIRV_TOOLS=1
+
+c.poptions   += $moltenvk_defs
+cxx.poptions += $moltenvk_defs
+
+# Upstream disables these (Common/CMakeLists.txt): Metal API deprecation
+# warnings, and clang's VLA-in-C++ extension warning (used intentionally in
+# a few places).
+#
+if ($cxx.id == 'clang')
+  cxx.coptions += -Wno-deprecated-declarations -Wno-vla-cxx-extension
 
 # Export options.
 #
-lib{moltenvk}:
+lib{MoltenVK}:
 {
   cxx.export.poptions = "-I$out_pfx_inc" "-I$src_pfx_inc"
   cxx.export.libs = $intf_libs
 }
 
-#liba{moltenvk}: cxx.export.poptions += -DMOLTENVK_STATIC
-#libs{moltenvk}: cxx.export.poptions += -DMOLTENVK_SHARED
+# Apple system frameworks (macOS only -- see ../PACKAGING.md for why this
+# package doesn't attempt iOS/tvOS/visionOS or non-Apple toolchains).
+#
+if ($cxx.target.class == 'macos')
+{
+  cxx.libs += -framework Foundation -framework Metal -framework CoreGraphics \
+              -framework AppKit -framework IOKit -framework IOSurface -framework QuartzCore \
+              -lobjc
+
+  # Only Foundation/Metal appear in the public API headers (mvk_datatypes.h,
+  # mvk_private_api.h) -- the rest are private implementation details.
+  #
+  lib{MoltenVK}: cxx.export.libs += -framework Foundation -framework Metal
+}
 
 # For pre-releases use the complete version to make sure they cannot
 # be used in place of another pre-release or the final version. See
 # the version module for details on the version.* variable values.
 #
 if $version.pre_release
-  lib{moltenvk}: bin.lib.version = "-$version.project_id"
+  lib{MoltenVK}: bin.lib.version = "-$version.project_id"
 else
-  lib{moltenvk}: bin.lib.version = "-$version.major.$version.minor"
+  lib{MoltenVK}: bin.lib.version = "-$version.major.$version.minor"
 
 # Don't install private headers.
 #
-{hxx ixx txx}{*}: install = false
+{h hxx}{*}: install = false
