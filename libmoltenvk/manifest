@@ -20,7 +20,7 @@ depends: libvulkan-headers ^1.4.0
 
 depends:
 \
-libspirv-cross ^1.4.357
+libspirv-cross ^1.4.357-
 {
   prefer
   {
