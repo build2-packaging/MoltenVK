@@ -16,5 +16,3 @@ ixx{*}: extension = ipp
 txx{*}: extension = tpp
 cxx{*}: extension = cpp
 h{*}:   extension = h
-
-test.target = $cxx.target

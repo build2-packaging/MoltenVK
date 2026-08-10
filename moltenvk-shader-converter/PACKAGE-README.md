@@ -8,15 +8,25 @@ development time from the command line.
 
 ## Usage
 
-Install the package and run the `MoltenVKShaderConverter` executable directly
-from the command line:
+To start using `moltenvk-shader-converter` in your project, add the following
+build-time `depends` value to your `manifest`, adjusting the version
+constraint as appropriate:
+
+```
+depends: * moltenvk-shader-converter ^1.4.2
+```
+
+Then import the executable in your `buildfile`:
+
+```
+import! mvksc = moltenvk-shader-converter%exe{MoltenVKShaderConverter}
+```
+
+It can also be installed and run directly from the command line:
 
 ```
 MoltenVKShaderConverter -si input.spv -mo output.metal
 ```
-
-This package is not intended to be imported into another `build2` package's
-`buildfile`.
 
 
 ## Importable targets

@@ -1,0 +1,14 @@
+import! [metadata] xxd = xxd%exe{xxd}
+
+file{noop.spv}: file{noop.spv.hex}@./ $xxd
+{{
+  diag xxd ($>)
+  $xxd -r -p $path($<[0]) $path($>)
+}}
+
+file{noop.spv}:     install = false
+file{noop.spv.hex}: install = false
+
+./: testscript $t file{noop.spv}
+
+testscript{*}: spv = $out_base/noop.spv

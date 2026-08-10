@@ -1,0 +1,11 @@
+: convert-noop-compute-shader
+:
+: Convert the same no-op SPIR-V compute shader used by libmoltenvk's own
+: smoke test (../../../libmoltenvk/tests/basics/driver.cpp) to MSL,
+: exercising convertSPIRV(). Requires real Metal-capable hardware. Fixture
+: $spv is generated at build time from noop.spv.hex via xxd (see buildfile).
+:
+$* -q -si $spv -mo out.metal &out.metal 2>!;
+sed -n -e 's/.*(kernel void).*/\1/p' out.metal >>EOO
+kernel void
+EOO
