@@ -1,6 +1,16 @@
 libs =
-#import libs += libhello%lib{hello}
 
-exe{moltenvk-shader-converter}: {hxx ixx txx cxx}{**} $libs
+# Links full libmoltenvk for the shared conversion implementation (upstream
+# links MoltenVK::MoltenVK). spirv-cross-msl provides public headers used by
+# the tool sources. Import liba{} explicitly: SPIRV-Cross's C++ components
+# are static-only (upstream's C++ API isn't ABI-stable, only its separate
+# C API is).
+#
+import libs += libmoltenvk%lib{MoltenVK} \
+               libspirv-cross%liba{spirv-cross-msl}
 
-cxx.poptions =+ "-I$out_root" "-I$src_root"
+exe{MoltenVKShaderConverter}: {h cxx mm}{*} $libs
+
+# Flat -I for upstream headers symlinked into src/.
+#
+cxx.poptions =+ "-I$src_base"

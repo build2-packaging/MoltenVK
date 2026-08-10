@@ -2,10 +2,9 @@
 #
 #cxx.internal.scope = current
 
-# Unlike libmoltenvk, this package never reaches MoltenVK's public API
-# headers (no mvk_datatypes.h -> CoreGraphics.h), so the cxx.std=latest /
-# Apple-SDK-header issue that forced libmoltenvk to pin to 17 doesn't apply
-# here.
+# No MoltenVK public headers that pull broken Apple SDK paths under later
+# language standards, so latest is fine here (libmoltenvk pins to 17).
+#
 cxx.std = latest
 
 using cxx
