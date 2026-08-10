@@ -1,6 +1,23 @@
-libs =
-#import libs += libhello%lib{hello}
+libs = # No interface/implementation split for executables.
 
-exe{moltenvk-shader-converter}: {hxx ixx txx cxx}{**} $libs
+import libs += libmoltenvk%lib{MoltenVK}
+import libs += libspirv-cross%lib{spirv-cross-msl}
 
-cxx.poptions =+ "-I$out_root" "-I$src_root"
+# exe{MoltenVKShaderConverter} -- mixed case, matching upstream's literal
+# add_executable(MoltenVKShaderConverter ...) name, same deliberate-deviation
+# precedent as lib{MoltenVK} in libmoltenvk.
+#
+# {h cxx mm}{*} picks up the tool sources plus the flat header-only
+# reachability symlinks (SPIRVToMSLConverter.h, FileSupport.h, etc.). Those
+# headers' implementations are already compiled into lib{MoltenVK}, do not
+# add their .cpp/.mm here.
+#
+./: exe{MoltenVKShaderConverter}
+exe{MoltenVKShaderConverter}: {h cxx mm}{*} $libs
+
+# Flat -I so quoted includes resolve via the src/ header symlinks. Upstream
+# sources use bare "Header.h" names (no directory prefix). Compilers follow
+# the real path of symlinked .cpp/.mm files, so without -I$src_base they
+# would look next to the upstream Tool/ directory instead of here.
+#
+cxx.poptions += "-I$src_base"
