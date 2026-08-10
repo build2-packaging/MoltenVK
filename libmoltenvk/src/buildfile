@@ -1,20 +1,53 @@
 intf_libs = # Interface dependencies.
 impl_libs = # Implementation dependencies.
-#import xxxx_libs += libhello%lib{hello}
 
-# Public headers.
+# Public API headers include <vulkan/vulkan.h>.
 #
+import intf_libs += libvulkan-headers%lib{vulkan-headers}
+
+# SPIRV-Cross is used only from private sources (implementation dependency).
+# Component/namespace selection is in the package manifest. Import liba{}
+# explicitly: SPIRV-Cross's C++ components are static-only (upstream's C++
+# API isn't ABI-stable, only its separate C API is).
+#
+import impl_libs += libspirv-cross%liba{spirv-cross-core}    \
+                    libspirv-cross%liba{spirv-cross-glsl}    \
+                    libspirv-cross%liba{spirv-cross-msl}     \
+                    libspirv-cross%liba{spirv-cross-reflect}
+
+# cereal is used only from MVKPipeline.mm (pipeline cache serialization).
+# Always linked, matching upstream MVK_EXCLUDE_CEREAL default of off.
+#
+import impl_libs += libcereal%lib{cereal}
+
 pub = [dir_path] ../include/MoltenVK/
 
 include $pub
 
 pub_hdrs = $($pub/ pub_hdrs)
 
-lib{moltenvk}: $pub/{$pub_hdrs}
-
-# Private headers and sources as well as dependencies.
+# Mixed-case lib{MoltenVK}: upstream ICD json and -lMoltenVK expect this name.
 #
-lib{moltenvk}: {hxx ixx txx cxx}{**} $impl_libs $intf_libs
+lib{MoltenVK}: $pub/{$pub_hdrs}
+
+# Private sources. MoltenVK/API/ is excluded: same files as public headers.
+#
+lib{MoltenVK}: Common/{h cxx m mm}{*}                  \
+               MoltenVKShaderConverter/{h cxx m mm}{*} \
+               MoltenVK/{h hxx cxx}{** -API/**}        \
+               MoltenVK/m{** -API/**}                  \
+               MoltenVK/mm{** -API/**}                 \
+               $impl_libs $intf_libs
+
+# .def X-macro fragments (#include "MVKExtensions.def" etc.): adhoc since
+# they're included, not linked (not the link rule's Windows
+# module-definition usage).
+#
+lib{MoltenVK}: MoltenVK/Layers/def{MVKExtensions}: include = adhoc
+lib{MoltenVK}: MoltenVK/GPUObjects/def{MVKDeviceFeatureStructs}: include = adhoc
+lib{MoltenVK}: MoltenVK/Commands/def{MVKCommandTypePools}: include = adhoc
+lib{MoltenVK}: MoltenVK/Utility/def{MVKConfigMembers}: include = adhoc
+lib{MoltenVK}: MoltenVK/Utility/def{MVKDXTnCodec}: include = adhoc
 
 # Build options.
 #
@@ -23,32 +56,95 @@ src_pfx_inc = [dir_path] $src_root/include/
 out_pfx_src = [dir_path] $out_root/src/
 src_pfx_src = [dir_path] $src_root/src/
 
-cxx.poptions =+ "-I$out_pfx_src" "-I$src_pfx_src" \
-                "-I$out_pfx_inc" "-I$src_pfx_inc"
+# Private -I paths: upstream PRIVATE include dirs plus Common/ and $out_base
+# (generated mvkGitRevDerived.h). Internal sources include the public API
+# headers unprefixed (#include "mvk_vulkan.h"), resolved via the already-
+# tracked include/MoltenVK/ symlinks rather than MoltenVK/API/ directly
+# (which lib{MoltenVK}'s own source glob below excludes).
+#
+moltenvk_ipaths = "-I$src_base/Common"              \
+                  "-I$out_pfx_inc/MoltenVK"         \
+                  "-I$src_pfx_inc/MoltenVK"         \
+                  "-I$src_base/MoltenVK/Commands"   \
+                  "-I$src_base/MoltenVK/GPUObjects" \
+                  "-I$src_base/MoltenVK/Layers"     \
+                  "-I$src_base/MoltenVK/OS"         \
+                  "-I$src_base/MoltenVK/Utility"    \
+                  "-I$src_base/MoltenVK/Vulkan"     \
+                  "-I$out_base"
 
-#obja{*}: cxx.poptions += -DMOLTENVK_STATIC_BUILD
-#objs{*}: cxx.poptions += -DMOLTENVK_SHARED_BUILD
+c.poptions   =+ "-I$out_pfx_src" "-I$src_pfx_src" \
+                "-I$out_pfx_inc" "-I$src_pfx_inc" \
+                $moltenvk_ipaths
+
+cxx.poptions =+ "-I$out_pfx_src" "-I$src_pfx_src" \
+                "-I$out_pfx_inc" "-I$src_pfx_inc" \
+                $moltenvk_ipaths
+
+log_level_num = ($config.libmoltenvk.log_level == 'off'   ? 0 : \
+                  $config.libmoltenvk.log_level == 'error' ? 1 : \
+                  $config.libmoltenvk.log_level == 'warn'  ? 2 : \
+                  $config.libmoltenvk.log_level == 'info'  ? 3 : 4)
+
+# MVK_FRAMEWORK_VERSION is diagnostic-only (matches upstream package version).
+#
+moltenvk_defs = -DMVK_FRAMEWORK_VERSION=1.4.2 \
+                "-DMVK_CONFIG_LOG_LEVEL=$log_level_num" \
+                "-DMVK_USE_METAL_PRIVATE_API=($config.libmoltenvk.use_metal_private_api ? 1 : 0)" \
+                -DMVK_EXCLUDE_SPIRV_TOOLS=1
+
+c.poptions   += $moltenvk_defs
+cxx.poptions += $moltenvk_defs
+
+# Match upstream Common/CMakeLists.txt warning disables. Use cc.coptions so
+# the flags also apply to Objective-C++ (.mm), not only pure C++. Match on
+# id.type so both Apple clang (clang-apple) and upstream clang are accepted.
+#
+if ($cxx.id.type == 'clang')
+  cc.coptions += -Wno-deprecated-declarations -Wno-vla-cxx-extension
+
+# Static revision string for diagnostics (no live git rev-parse).
+#
+h{mvkGitRevDerived}: in{mvkGitRevDerived.h.in}
+h{mvkGitRevDerived}:
+{
+  in.symbol = '@'
+  in.substitutions = MVK_GIT_REV@"v$version"
+  install = false
+}
+
+lib{MoltenVK}: h{mvkGitRevDerived}
 
 # Export options.
 #
-lib{moltenvk}:
+lib{MoltenVK}:
 {
   cxx.export.poptions = "-I$out_pfx_inc" "-I$src_pfx_inc"
   cxx.export.libs = $intf_libs
 }
 
-#liba{moltenvk}: cxx.export.poptions += -DMOLTENVK_STATIC
-#libs{moltenvk}: cxx.export.poptions += -DMOLTENVK_SHARED
+# Apple system frameworks (package is macOS-only; see build/root.build).
+#
+cxx.libs += -framework Foundation -framework Metal -framework CoreGraphics \
+            -framework AppKit -framework IOKit -framework IOSurface -framework QuartzCore \
+            -lobjc
+
+# Frameworks required by installed public headers (mvk_datatypes.h,
+# mvk_private_api.h, mvk_deprecated_api.h).
+#
+lib{MoltenVK}: \
+  cxx.export.libs += -framework Foundation -framework Metal \
+                     -framework CoreGraphics -framework IOSurface
 
 # For pre-releases use the complete version to make sure they cannot
 # be used in place of another pre-release or the final version. See
 # the version module for details on the version.* variable values.
 #
 if $version.pre_release
-  lib{moltenvk}: bin.lib.version = "-$version.project_id"
+  lib{MoltenVK}: bin.lib.version = "-$version.project_id"
 else
-  lib{moltenvk}: bin.lib.version = "-$version.major.$version.minor"
+  lib{MoltenVK}: bin.lib.version = "-$version.major.$version.minor"
 
 # Don't install private headers.
 #
-{hxx ixx txx}{*}: install = false
+{h hxx}{*}: install = false
