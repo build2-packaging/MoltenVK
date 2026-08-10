@@ -13,7 +13,8 @@ package-url: https://github.com/build2-packaging/MoltenVK
 package-email: packaging@build2.org ; Mailing list.
 topics: Graphics, Vulkan, Metal, c++
 requires: c++17
-builds: +macos ; Layers Vulkan on top of Apple's Metal, macOS-only.
+build-include: macos**
+build-exclude: ** ; Layers Vulkan on top of Apple's Metal, macOS-only.
 depends: * build2 >= 0.18.0
 depends: * bpkg >= 0.18.0
 
