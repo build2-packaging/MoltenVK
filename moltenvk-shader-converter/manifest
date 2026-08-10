@@ -16,6 +16,7 @@ requires: c++17
 builds: +macos ; Stand-alone command-line MoltenVKShaderConverter tool, macOS-only.
 depends: * build2 >= 0.18.0
 depends: * bpkg >= 0.18.0
+depends: * xxd >= 8.2.3075
 
 depends: libmoltenvk == $
 
