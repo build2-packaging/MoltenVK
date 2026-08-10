@@ -1,15 +1,47 @@
 : 1
 name: moltenvk-shader-converter
-version: 0.1.0-a.0.z
+version: 1.4.2-a.0.z
 language: c++
-project: build2-MoltenVK
-summary: moltenvk-shader-converter C++ executable
-license: Apache-2.0 ; Apache License 2.0.
+project: MoltenVK
+summary: SPIR-V to Metal Shading Language shader converter command-line tool
+license: Apache-2.0
 description-file: README.md
 package-description-file: PACKAGE-README.md
-url: https://example.org/upstream
-email: upstream@example.org
-package-url: https://github.com/build2-packaging/build2-MoltenVK
+url: https://github.com/KhronosGroup/MoltenVK
+src-url: https://github.com/KhronosGroup/MoltenVK
+package-url: https://github.com/build2-packaging/MoltenVK
 package-email: packaging@build2.org ; Mailing list.
+topics: Graphics, Vulkan, Metal, SPIR-V, c++
+requires: c++17
+builds: +macos ; Stand-alone command-line MoltenVKShaderConverter tool, macOS-only.
 depends: * build2 >= 0.18.0
 depends: * bpkg >= 0.18.0
+
+depends: libmoltenvk == $
+
+depends:
+\
+libspirv-cross ^1.4.357-
+{
+  prefer
+  {
+    config.libspirv_cross.glsl      = true
+    config.libspirv_cross.msl       = true
+    config.libspirv_cross.reflect   = true
+    config.libspirv_cross.hlsl      = false
+    config.libspirv_cross.cpp       = false
+    config.libspirv_cross.util      = false
+    config.libspirv_cross.c_api     = false
+    config.libspirv_cross.namespace = 'MVK_spirv_cross'
+  }
+
+  accept ( $config.libspirv_cross.glsl                  \
+           && $config.libspirv_cross.msl                \
+           && $config.libspirv_cross.reflect             \
+           && !$config.libspirv_cross.hlsl               \
+           && !$config.libspirv_cross.cpp                \
+           && !$config.libspirv_cross.util               \
+           && !$config.libspirv_cross.c_api               \
+           && $config.libspirv_cross.namespace == 'MVK_spirv_cross' )
+}
+\
