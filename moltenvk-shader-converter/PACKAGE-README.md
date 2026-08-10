@@ -1,25 +1,35 @@
-# moltenvk-shader-converter - An executable
+# moltenvk-shader-converter - SPIR-V to Metal Shading Language shader converter command-line tool
 
-This is a `build2` package for the [`<UPSTREAM-NAME>`](https://<UPSTREAM-URL>)
-executable. It is a <SUMMARY-OF-FUNCTIONALITY>.
+This is a `build2` package for the [`MoltenVK`](https://github.com/KhronosGroup/MoltenVK)
+project's stand-alone `MoltenVKShaderConverter` command-line tool. It converts
+SPIR-V shader code to Metal Shading Language (MSL) source code, for use at
+development time from the command line. This package currently targets macOS
+only.
 
-Note that the `moltenvk-shader-converter` executable in this package provides `build2` metadata.
+As in upstream, the tool links against `libmoltenvk` (the full ICD library)
+for the shared conversion implementation.
 
 
 ## Usage
 
-To start using `moltenvk-shader-converter` in your project, add the following build-time
-`depends` value to your `manifest`, adjusting the version constraint as
-appropriate:
+To start using `moltenvk-shader-converter` in your project, add the following
+build-time `depends` value to your `manifest`, adjusting the version
+constraint as appropriate:
 
 ```
-depends: * moltenvk-shader-converter ^<VERSION>
+depends: * moltenvk-shader-converter ^1.4.2
 ```
 
 Then import the executable in your `buildfile`:
 
 ```
-import! [metadata] <TARGET> = moltenvk-shader-converter%exe{<TARGET>}
+import! mvksc = moltenvk-shader-converter%exe{MoltenVKShaderConverter}
+```
+
+It can also be installed and run directly from the command line:
+
+```
+MoltenVKShaderConverter -si input.spv -mo output.metal
 ```
 
 
@@ -28,18 +38,12 @@ import! [metadata] <TARGET> = moltenvk-shader-converter%exe{<TARGET>}
 This package provides the following importable targets:
 
 ```
-exe{<TARGET>}
+exe{MoltenVKShaderConverter}
 ```
 
-<DESCRIPTION-OF-IMPORTABLE-TARGETS>
+`exe{MoltenVKShaderConverter}` is the stand-alone SPIR-V to Metal Shading Language command-line tool.
 
 
 ## Configuration variables
 
-This package provides the following configuration variables:
-
-```
-[bool] config.moltenvk_shader_converter.<VARIABLE> ?= false
-```
-
-<DESCRIPTION-OF-CONFIG-VARIABLES>
+This package provides no configuration variables.
