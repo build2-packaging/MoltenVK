@@ -1,0 +1,6 @@
+project = moltenvk-shader-converter
+
+using version
+using config
+using install
+using dist
