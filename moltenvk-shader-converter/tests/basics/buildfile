@@ -1,0 +1,8 @@
+# Binary SPIR-V fixture (same no-op compute shader as libmoltenvk smoke test).
+# Committed in src: pin with @./ so it is not treated as an out-tree target.
+#
+./: testscript $t file{noop.spv}@./
+
+file{noop.spv}@./: install = false
+
+testscript{*}: spv = $src_base/noop.spv
