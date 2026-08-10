@@ -2,15 +2,42 @@
 #
 #cxx.internal.scope = current
 
-cxx.std = latest
+# Match upstream CMAKE_CXX_STANDARD=17. Under cxx.std=latest, Apple SDK
+# CoreGraphics/ColorSync headers fail (enum arithmetic errors).
+#
+cxx.std = 17
 
+using c
+using c.objc   # MTLSamplerDescriptor+MoltenVK.m and friends (plain Objective-C).
 using cxx
+using cxx.objcxx # The bulk of MoltenVK/MoltenVK/**.mm (Objective-C++).
+using in
 
-hxx{*}: extension = hpp
+assert ($cxx.target.class == 'macos') \
+  'libmoltenvk is macOS-only'
+
+assert ($cxx.id.type == 'clang') \
+  'libmoltenvk requires clang (Objective-C++ and Metal frameworks)'
+
+hxx{*}: extension = hpp # Only Vulkan/mvk_datatypes.hpp; everything else is h{}.
 ixx{*}: extension = ipp
 txx{*}: extension = tpp
 cxx{*}: extension = cpp
+h{*}:   extension = h
 
 # The test target for cross-testing (running tests under Wine, etc).
 #
 test.target = $cxx.target
+
+# Mirrors upstream MVK_USE_METAL_PRIVATE_API / MVK_CONFIG_LOG_LEVEL.
+# SPIRV-Tools is always excluded (not packaged yet).
+#
+config [bool]   config.libmoltenvk.use_metal_private_api ?= false
+config [string] config.libmoltenvk.log_level             ?= 'info'
+
+assert ($config.libmoltenvk.log_level == 'debug' || \
+        $config.libmoltenvk.log_level == 'info'  || \
+        $config.libmoltenvk.log_level == 'warn'  || \
+        $config.libmoltenvk.log_level == 'error' || \
+        $config.libmoltenvk.log_level == 'off')     \
+       'invalid config.libmoltenvk.log_level'
