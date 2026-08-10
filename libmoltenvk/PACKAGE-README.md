@@ -39,11 +39,9 @@ This package provides the following configuration variables:
 
 ```
 [bool]   config.libmoltenvk.exclude_spirv_tools   ?= true
-[bool]   config.libmoltenvk.exclude_cereal        ?= true
 [bool]   config.libmoltenvk.use_metal_private_api ?= false
 [string] config.libmoltenvk.log_level             ?= 'info'
 ```
 
-Mirror upstream's `MVK_EXCLUDE_SPIRV_TOOLS`, `MVK_EXCLUDE_CEREAL`,
-`MVK_USE_METAL_PRIVATE_API`, and `MVK_CONFIG_LOG_LEVEL` CMake options,
-respectively.
+Mirror upstream's `MVK_EXCLUDE_SPIRV_TOOLS`, `MVK_USE_METAL_PRIVATE_API`, and
+`MVK_CONFIG_LOG_LEVEL` CMake options, respectively.

@@ -25,11 +25,11 @@ h{*}:   extension = h
 #
 test.target = $cxx.target
 
-# Mirrors upstream's MVK_EXCLUDE_SPIRV_TOOLS/MVK_EXCLUDE_CEREAL/
-# MVK_USE_METAL_PRIVATE_API/MVK_CONFIG_LOG_LEVEL CMake options.
+# Mirrors upstream's MVK_EXCLUDE_SPIRV_TOOLS/MVK_USE_METAL_PRIVATE_API/
+# MVK_CONFIG_LOG_LEVEL CMake options. cereal (MVK_EXCLUDE_CEREAL) is always
+# linked, no toggle exposed, see ../src/buildfile.
 #
 config [bool]   config.libmoltenvk.exclude_spirv_tools    ?= true
-config [bool]   config.libmoltenvk.exclude_cereal          ?= true
 config [bool]   config.libmoltenvk.use_metal_private_api  ?= false
 config [string] config.libmoltenvk.log_level                ?= 'info'
 
@@ -40,11 +40,8 @@ assert ($config.libmoltenvk.log_level == 'debug' || \
         $config.libmoltenvk.log_level == 'off')     \
        'invalid config.libmoltenvk.log_level'
 
-# Neither SPIRV-Tools/SPIRV-Headers nor cereal is packaged yet (see
-# ../../PACKAGING.md), so fail clearly rather than silently mis-build if
-# either exclude flag is ever turned off.
+# SPIRV-Tools/SPIRV-Headers is not packaged yet, so fail clearly rather than
+# silently mis-build if the exclude flag is ever turned off.
 #
 assert $config.libmoltenvk.exclude_spirv_tools \
   'config.libmoltenvk.exclude_spirv_tools=false requires SPIRV-Tools/SPIRV-Headers, not yet packaged'
-assert $config.libmoltenvk.exclude_cereal \
-  'config.libmoltenvk.exclude_cereal=false requires cereal, not yet packaged'

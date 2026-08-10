@@ -14,6 +14,12 @@ import impl_libs += libspirv-cross%lib{spirv-cross-core} \
                      libspirv-cross%lib{spirv-cross-msl}  \
                      libspirv-cross%lib{spirv-cross-reflect}
 
+# cereal is only ever reached from MVKPipeline.mm (pipeline cache
+# serialization) -- implementation dependency, always linked in (matches
+# upstream's own MVK_EXCLUDE_CEREAL default of off).
+#
+import impl_libs += libcereal%lib{cereal}
+
 # Public headers (upstream's MoltenVK/include/MoltenVK/ symlink, flattened
 # from MoltenVK/MoltenVK/API/ -- see ../include/MoltenVK/buildfile).
 #
@@ -85,9 +91,6 @@ log_level_num = ($config.libmoltenvk.log_level == 'off'   ? 0 : \
 moltenvk_defs = -DMVK_FRAMEWORK_VERSION=1.4.2 \
                 "-DMVK_CONFIG_LOG_LEVEL=$log_level_num" \
                 "-DMVK_USE_METAL_PRIVATE_API=($config.libmoltenvk.use_metal_private_api ? 1 : 0)"
-
-if $config.libmoltenvk.exclude_cereal
-  moltenvk_defs += -DMVK_USE_CEREAL=0
 
 if $config.libmoltenvk.exclude_spirv_tools
   moltenvk_defs += -DMVK_EXCLUDE_SPIRV_TOOLS=1

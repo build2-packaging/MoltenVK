@@ -13,4 +13,9 @@ location: https://github.com/helmesjo/build2-SPIRV-Cross.git#main
 
 :
 role: prerequisite
+type: git
+location: https://github.com/helmesjo/build2-cereal.git#main
+
+:
+role: prerequisite
 location: https://pkg.cppget.org/1/stable
