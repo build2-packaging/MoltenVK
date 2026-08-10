@@ -1,0 +1,7 @@
+: create-device-and-pipeline
+:
+: Create a Vulkan instance and device through MoltenVK's ICD entry points,
+: then a compute pipeline from an embedded SPIR-V shader, exercising the
+: MoltenVKShaderConverter/SPIRV-Cross SPIR-V-to-MSL conversion path.
+:
+$* 2>!
