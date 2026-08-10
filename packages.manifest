@@ -1,2 +1,5 @@
 : 1
 location: libmoltenvk/
+
+:
+location: moltenvk-shader-converter/
