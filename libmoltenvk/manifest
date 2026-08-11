@@ -13,6 +13,9 @@ package-url: https://github.com/build2-packaging/MoltenVK
 package-email: packaging@build2.org ; Mailing list.
 topics: graphics, vulkan, metal, c++
 requires: c++17
+requires: macos
+requires: clang ; Objective-C++ and Metal frameworks (GCC is not supported)
+build-exclude: **-gcc** ; GCC cannot compile MoltenVK Objective-C++/Metal
 build-include: macos**
 build-exclude: ** ; Layers Vulkan on top of Apple's Metal, macOS-only.
 depends: * build2 >= 0.18.0
