@@ -1,0 +1,5 @@
+libmoltenvk-tests
+
+# Testscript output directory (can be symlink).
+#
+test-libmoltenvk-tests

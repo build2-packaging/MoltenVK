@@ -1,0 +1,9 @@
+libs =
+#import libs += libhello%lib{hello}
+
+exe{libmoltenvk-tests}: {hxx ixx txx cxx}{**} $libs testscript
+
+out_pfx = [dir_path] $out_root/src/
+src_pfx = [dir_path] $src_root/src/
+
+cxx.poptions =+ "-I$out_pfx" "-I$src_pfx"

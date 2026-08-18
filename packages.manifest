@@ -3,3 +3,6 @@ location: libmoltenvk/
 
 :
 location: moltenvk-shader-converter/
+
+:
+location: libmoltenvk-tests/
