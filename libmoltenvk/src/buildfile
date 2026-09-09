@@ -111,6 +111,15 @@ cxx.poptions += $moltenvk_defs
 if ($cxx.id.type == 'clang')
   cc.coptions += -Wno-deprecated-declarations -Wno-vla-cxx-extension
 
+# Building against newer SDKs (e.g. the macOS 26 SDK, MVK_XCODE_26) with an
+# older deployment target warns on every reference to a newer symbol
+# (MTLLanguageVersion4_0 etc.), even when, as here, the reference only
+# compiles under its own #if MVK_XCODE_26 guard. Disable rather than
+# restructure around @available().
+#
+if ($cxx.id.type == 'clang')
+  cc.coptions += -Wno-unguarded-availability-new
+
 # Static revision string for diagnostics (no live git rev-parse).
 #
 h{mvkGitRevDerived}: in{mvkGitRevDerived.h.in}

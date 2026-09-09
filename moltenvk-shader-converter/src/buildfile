@@ -14,3 +14,12 @@ exe{MoltenVKShaderConverter}: {h cxx mm}{*} $libs
 # Flat -I for upstream headers symlinked into src/.
 #
 cxx.poptions =+ "-I$src_base"
+
+# Building against newer SDKs (e.g. the macOS 26 SDK, MVK_XCODE_26) with an
+# older deployment target warns on every reference to a newer symbol
+# (MTLLanguageVersion4_0 etc.), even when, as here, the reference only
+# compiles under its own #if MVK_XCODE_26 guard. Disable rather than
+# restructure around @available(), matching libmoltenvk/src/buildfile.
+#
+if ($cxx.id.type == 'clang')
+  cc.coptions += -Wno-unguarded-availability-new
