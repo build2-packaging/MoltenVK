@@ -97,7 +97,14 @@ import impl_libs += libcereal%lib{cereal}
 
 # Private sources. MoltenVK/API/ is excluded: same files as public headers.
 #
-# MoltenVK/GPUObjects/MVKDevice.mm is a manually patched copy (see
+# MoltenVK/Vulkan/vulkan.mm is a manually patched copy (see .orig/.patch next
+# to it, and KhronosGroup/MoltenVK#2663): vk_icdNegotiateLoaderICDInterfaceVersion
+# caps the negotiated interface at version 5, below the version 7 the Vulkan
+# loader requires to accept a VK_LUNARG_direct_driver_loading driver (see
+# libmoltenvk-tests/direct-driver-loading/). Upstream confirmed bumping this
+# one value resolves it.
+#
+# MoltenVK/GPUObjects/MVKDevice.mm is likewise a manually patched copy (see
 # .orig/.patch next to it): supplies the MTLGPUFamilyApple9 enumerator when
 # an Xcode 15.0 beta SDK doesn't declare it yet, so the build doesn't fail
 # on beta toolchains older than upstream's own stated Xcode 15.0.1 minimum.

@@ -1,0 +1,11 @@
+--- vulkan.mm.orig	2026-08-19 18:43:51
++++ vulkan.mm	2026-08-19 22:14:41
+@@ -4450,7 +4450,7 @@
+ 	// This ICD expects to be loaded by a loader of at least version 5.
+ 	VkResult rslt = VK_SUCCESS;
+ 	if (pSupportedVersion && *pSupportedVersion >= 5) {
+-		*pSupportedVersion = 5;
++		*pSupportedVersion = 7;
+ 	} else {
+ 		rslt = VK_ERROR_INCOMPATIBLE_DRIVER;
+ 	}
