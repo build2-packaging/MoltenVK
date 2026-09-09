@@ -1,0 +1,69 @@
+import  vk         = libvulkan-loader%lib{vulkan}
+import! [metadata, rule_hint=cxx.link] dylib_meta = libmoltenvk%libs{MoltenVK}
+
+include ../shared/
+
+# A minimal .app bundle around the driver: Contents/MacOS/ for the
+# executable, Contents/Resources/vulkan/icd.d/ for the bundle json and a
+# copy of the dylib. No Info.plist: macOS's CFBundleGetMainBundle() bundle
+# detection is path-structure-based (Contents/MacOS/<exe>), not
+# metadata-based, confirmed empirically.
+#
+# Nested output directories: fsdir{}'s automatic parent creation only
+# applies out-of-tree (out_base != src_base). In-source (what dist +
+# configure + update in the unpacked archive produces), every level must
+# be its own explicit fsdir{} prerequisite. A forwarded out-of-source
+# config can hide this (leftover dirs); dist unpacks a clean in-source
+# tree.
+#
+fsdir{Driver.app/Contents/}: fsdir{Driver.app/}
+fsdir{Driver.app/Contents/MacOS/}: fsdir{Driver.app/Contents/}
+fsdir{Driver.app/Contents/Resources/}: fsdir{Driver.app/Contents/}
+fsdir{Driver.app/Contents/Resources/vulkan/}: \
+  fsdir{Driver.app/Contents/Resources/}
+fsdir{Driver.app/Contents/Resources/vulkan/icd.d/}: \
+  fsdir{Driver.app/Contents/Resources/vulkan/}
+
+macos_dir = [dir_path] Driver.app/Contents/MacOS/
+icd_dir   = [dir_path] Driver.app/Contents/Resources/vulkan/icd.d/
+
+./: Driver.app/Contents/MacOS/exe{driver-bundle}
+
+# Creates a real VkDevice, which needs actual Metal. testscript probes
+# for it first (see driver.cpp) and falls back to checking just the
+# probe's own diagnostic when running on a host without Metal (e.g. CI).
+#
+Driver.app/Contents/MacOS/exe{driver-bundle}: \
+  {hxx ixx txx cxx}{**} $vk ../shared/libue{hw-probe} testscript
+Driver.app/Contents/MacOS/exe{driver-bundle}: fsdir{$macos_dir}
+Driver.app/Contents/MacOS/exe{driver-bundle}: install = false
+
+cxx.poptions += "-I$src_root/shared"
+
+# Both copied from libs{MoltenVK}'s metadata via $dylib_meta (path, not
+# a linked prerequisite) - a plain import of the json/dylib targets
+# themselves can't resolve under sys:.
+#
+Driver.app/Contents/Resources/vulkan/icd.d/file{MoltenVK_icd.json}: \
+  $dylib_meta fsdir{$icd_dir}
+{{
+  json_path = $($dylib_meta: libmoltenvk.icd_json_bundle)
+  depdb hash $json_path
+
+  diag bundle-json $>
+  cp $json_path $path($>)
+}}
+
+Driver.app/Contents/Resources/vulkan/icd.d/file{libMoltenVK.dylib}: \
+  $dylib_meta fsdir{$icd_dir}
+{{
+  dylib_path = $($dylib_meta: libmoltenvk.test_dylib_path)
+  depdb hash $dylib_path
+
+  diag bundle-dylib $>
+  cp $dylib_path $path($>)
+}}
+
+Driver.app/Contents/MacOS/exe{driver-bundle}: \
+  Driver.app/Contents/Resources/vulkan/icd.d/file{MoltenVK_icd.json} \
+  Driver.app/Contents/Resources/vulkan/icd.d/file{libMoltenVK.dylib}: include = adhoc

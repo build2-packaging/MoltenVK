@@ -41,6 +41,18 @@ function resolves it, exercising the relative-path arithmetic that
 dylib path is always absolute against this repo's own, built-from-source
 `libmoltenvk`).
 
+`bundle/`: the `.app` bundle path. Import `libmoltenvk%libs{MoltenVK}`'s
+metadata for the bundle json and dylib paths (works whether `libmoltenvk`
+is built from source or a separately installed dependency, unlike a
+plain prerequisite copy, which cannot cross a `sys:` package boundary).
+Assembles a minimal bundle structure (`Driver.app/Contents/MacOS/driver-
+bundle`, no `Info.plist`) around the driver, with
+`libmoltenvk%json{MoltenVK_icd-bundle}` and a copy of the dylib placed in
+`Contents/Resources/vulkan/icd.d/`, and runs it with a completely empty
+environment. Proves the loader's `CFBundleGetMainBundle` bundle detection
+is purely path-structure-based: no `Info.plist`, no codesigning, no
+`open`/LaunchServices needed for this to work.
+
 
 ## Importable targets
 
