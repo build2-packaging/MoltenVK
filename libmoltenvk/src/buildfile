@@ -1,6 +1,24 @@
 intf_libs = # Interface dependencies.
 impl_libs = # Implementation dependencies.
 
+pub = [dir_path] ../include/MoltenVK/
+
+include $pub
+
+pub_hdrs = $($pub/ pub_hdrs)
+
+# Mixed-case lib{MoltenVK}: upstream ICD json and -lMoltenVK expect this name.
+#
+# Declared here, before the imports below, so the lib{}/liba{}/libs{} group
+# exists as early as possible in this buildfile. libspirv-cross%liba{} pulls
+# in a full nested project bootstrap, and a concurrent importer of
+# libs{MoltenVK} (e.g. libmoltenvk-tests) that reaches this scope while that
+# bootstrap is still in progress would otherwise see the file as "already
+# included" but the target not yet declared (unknown imported target).
+# See build2 issue #563.
+#
+lib{MoltenVK}: $pub/{$pub_hdrs}
+
 # Public API headers include <vulkan/vulkan.h>.
 #
 import intf_libs += libvulkan-headers%lib{vulkan-headers}
@@ -19,16 +37,6 @@ import impl_libs += libspirv-cross%liba{spirv-cross-core}    \
 # Always linked, matching upstream MVK_EXCLUDE_CEREAL default of off.
 #
 import impl_libs += libcereal%lib{cereal}
-
-pub = [dir_path] ../include/MoltenVK/
-
-include $pub
-
-pub_hdrs = $($pub/ pub_hdrs)
-
-# Mixed-case lib{MoltenVK}: upstream ICD json and -lMoltenVK expect this name.
-#
-lib{MoltenVK}: $pub/{$pub_hdrs}
 
 # Private sources. MoltenVK/API/ is excluded: same files as public headers.
 #
