@@ -1,3 +1,5 @@
+#undef NDEBUG
+#include <cassert>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
@@ -5,8 +7,6 @@
 
 #include <vulkan/vulkan.h>
 
-#undef NDEBUG
-#include <cassert>
 
 // True iff argv[1] is exactly "--probe-hw".
 //
