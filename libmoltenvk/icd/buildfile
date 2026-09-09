@@ -1,0 +1,86 @@
+include ../src/
+
+# ICD manifests for Vulkan-Loader discovery. Two generated jsons (out-tree
+# and installed), each a plain in{}-substituted file{} with library_path
+# computed relative to its own directory (Khronos rule, which keeps
+# config.install.relocatable=true working). No custom recipes: update is
+# the stock in rule, install/uninstall is the stock install rule.
+#
+# json{MoltenVK_icd} (out-tree) and json{MoltenVK_icd-install} (installed)
+# are both consumed by libmoltenvk-tests, but not by importing either json{}
+# target directly: a plain, non-metadata-protocol import of a custom,
+# not-installed (or, for -install, non-library) target type cannot cross a
+# sys: package boundary (e.g. CI's test-installed phase, confirmed by
+# testing against a real installed libmoltenvk). libs{MoltenVK} already has
+# a working metadata channel (dylib_path) proven to resolve correctly
+# there too, so the ICD json path piggybacks on it instead (see
+# ../src/buildfile, where libs{MoltenVK} and its export.metadata actually
+# live: importing a target only loads the buildfile where it is declared,
+# not every buildfile that later adds variables to it, so it can't live
+# here). Production consumers still need neither depends nor import on
+# this package for ICD discovery (search path or VK_ADD_DRIVER_FILES);
+# this is for libmoltenvk-tests only, see ../PACKAGE-README.md.
+#
+# json{MoltenVK_icd-bundle} is a static, unmodified-content export for .app
+# packagers (library_path relative to its own directory, i.e. same
+# directory as the dylib once copied into Contents/Resources/vulkan/icd.d/).
+# Installed under share/libmoltenvk/ (install.data) rather than
+# etc/vulkan/icd.d/: its relative library_path only makes sense once
+# copied next to a dylib inside some .app bundle, not sitting alongside
+# the real, loader-discovered jsons above.
+#
+# ICD mode requires the shared library, so the generated jsons (and the
+# adhoc dylib update they trigger) only exist when shared is being built.
+#
+in.symbol = '@'
+in.mode = lax
+
+shared = ($bin.lib != 'static')
+
+# Declarations stay unconditional so dist produces the same target graph
+# regardless of $shared. Only default target-set participation is
+# conditional, via `include` below.
+#
+json{MoltenVK_icd}: in{MoltenVK_icd.json.in}
+json{MoltenVK_icd}: ../src/libs{MoltenVK}: include = adhoc
+json{MoltenVK_icd}:
+{
+  library_path = $posix_string($relative([path] $out_root/src/libMoltenVK.dylib, $out_base))
+  install = false
+}
+
+# lib, resolved relative to etc/vulkan/icd.d/ (not as absolute paths:
+# the two-argument $install.resolve() form is required for
+# config.install.relocatable=true, which tracks locations relative to
+# each other rather than as absolute strings). Falls back to a
+# placeholder when config.install.root isn't set yet (ordinary dev
+# build). This target is never actually installed from that state.
+#
+icd_etcdir = ($install.root != [null] \
+  ? $install.resolve([dir_path] etc/vulkan/icd.d/, [dir_path]) \
+  : [dir_path] '/unconfigured')
+icd_libdir = ($install.root != [null] \
+  ? $install.resolve($install.lib, $icd_etcdir) \
+  : [dir_path] '/unconfigured')
+
+json{MoltenVK_icd-install}: in{MoltenVK_icd.json.in}
+json{MoltenVK_icd-install}: ../src/libs{MoltenVK}: include = adhoc
+json{MoltenVK_icd-install}:
+{
+  library_path = $posix_string([path] $icd_libdir/libMoltenVK.dylib)
+  install = etc/vulkan/icd.d/MoltenVK_icd.json
+}
+
+# Static, unmodified-content copy for .app packagers. Source file is named
+# *-static.json: MoltenVK_icd-bundle.json is this target's own output path.
+#
+json{MoltenVK_icd-bundle}: file{MoltenVK_icd-bundle-static.json}@./
+{{
+  diag cp $>
+  cp $path($<) $path($>)
+}}
+json{MoltenVK_icd-bundle}: install = data/MoltenVK_icd-bundle.json
+
+./: json{MoltenVK_icd-bundle}
+./: json{MoltenVK_icd}:         include = $shared
+./: json{MoltenVK_icd-install}: include = $shared

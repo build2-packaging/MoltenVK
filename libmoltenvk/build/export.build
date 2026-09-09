@@ -1,6 +1,11 @@
 $out_root/
 {
   include src/
+  include icd/
 }
 
-export $out_root/src/$import.target
+if ($import.target == json{MoltenVK_icd} || \
+    $import.target == json{MoltenVK_icd-bundle})
+  export $out_root/icd/$import.target
+else
+  export $out_root/src/$import.target

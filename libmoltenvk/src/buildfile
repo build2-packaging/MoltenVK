@@ -19,6 +19,63 @@ pub_hdrs = $($pub/ pub_hdrs)
 #
 lib{MoltenVK}: $pub/{$pub_hdrs}
 
+# Dylib path for direct driver loading (VK_LUNARG_direct_driver_loading):
+# a consumer imports libs{MoltenVK} as an adhoc (not linked) prerequisite
+# to build the dylib without exposing its vk* symbols, dlopens this path
+# at runtime, and hands the loader vk_icdGetInstanceProcAddr via
+# VkDirectDriverLoadingInfoLUNARG. No ICD json, no environment variable.
+#
+libs{MoltenVK}:
+{
+  export.metadata = 1 libmoltenvk
+
+  libmoltenvk.dylib_path = [path] $out_root/src/libMoltenVK.dylib
+
+  # Relative to $install.bin (a consumer executable's own install
+  # location), not absolute: always-relative so this stays correct
+  # under config.install.relocatable=true (see $install.resolve). An
+  # installed consumer completes this relative path at runtime by
+  # resolving the executable's path and using its directory as the
+  # base, then dlopen().
+  #
+  libmoltenvk.dylib_path.for_install = ($install.root != [null] \
+    ? [path] $install.resolve($install.lib, $install.bin)/libMoltenVK.dylib \
+    : [path])
+
+  # ICD json path, for libmoltenvk-tests/icd (see ../icd/buildfile, where
+  # the actual json{} targets and their install location are declared).
+  # Piggybacked here, on libs{MoltenVK}'s own export.metadata, rather than
+  # on either json{} target directly: importing a target only loads the
+  # buildfile where it is declared, not every buildfile that later adds
+  # variables to it, so this has to live wherever the consumer's import
+  # actually resolves to, not in ../icd/buildfile.
+  #
+  libmoltenvk.icd_json = [path] $out_root/icd/MoltenVK_icd.json
+  libmoltenvk.icd_json.for_install = ($install.root != [null] \
+    ? [path] $install.resolve([dir_path] etc/vulkan/icd.d/, [dir_path])/MoltenVK_icd.json \
+    : [path])
+
+  # For libmoltenvk-tests/bundle/buildfile.
+  #
+  libmoltenvk.icd_json_bundle = [path] $out_root/icd/MoltenVK_icd-bundle.json
+  libmoltenvk.icd_json_bundle.for_install = ($install.root != [null] \
+    ? [path] $install.resolve($install.data, [dir_path])/MoltenVK_icd-bundle.json \
+    : [path])
+
+  # Absolute regardless of config.install.relocatable, unlike
+  # dylib_path.for_install above: for libmoltenvk-tests/direct-driver-loading's
+  # own test binary, which (unlike a real direct driver loading consumer)
+  # is never itself installed, so dylib_path.for_install's relative path
+  # can never be completed against it. Same purpose as icd_json above:
+  # lets that one test find and dlopen the dylib regardless of
+  # installation topology.
+  #
+  libmoltenvk.test_dylib_path = [path] $out_root/src/libMoltenVK.dylib
+  libmoltenvk.test_dylib_path.for_install = ($install.root != [null] \
+    ? [path] $install.resolve($install.lib, [dir_path])/libMoltenVK.dylib \
+    : [path])
+}
+
 # Public API headers include <vulkan/vulkan.h>.
 #
 import intf_libs += libvulkan-headers%lib{vulkan-headers}
