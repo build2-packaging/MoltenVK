@@ -108,8 +108,26 @@ cxx.poptions += $moltenvk_defs
 # the flags also apply to Objective-C++ (.mm), not only pure C++. Match on
 # id.type so both Apple clang (clang-apple) and upstream clang are accepted.
 #
+# -Wno-unknown-warning-option guards this whole, growing list against older
+# clang (e.g. Xcode 15.0 Beta 1's clang 15.0.0 doesn't know
+# -Wno-vla-cxx-extension yet): without it, an unrecognized -Wno-* here is
+# itself a warning, once per translation unit.
+#
 if ($cxx.id.type == 'clang')
-  cc.coptions += -Wno-deprecated-declarations -Wno-vla-cxx-extension
+  cc.coptions += -Wno-unknown-warning-option \
+                 -Wno-deprecated-declarations -Wno-vla-cxx-extension
+
+# Not in upstream's own disables, and not raised by the clang this project
+# is developed against: older clang (Xcode 15.0 Beta 1's clang 15.0.0) is
+# stricter about a couple of upstream code patterns that are otherwise
+# harmless on this project's macOS-only target:
+#  - -Wmismatched-tags: struct/class forward-declaration mismatches, an
+#    MSVC-ABI linker concern that doesn't apply here.
+#  - -Wmissing-braces: nested aggregate-initializer brace elision, a
+#    stylistic nag with no correctness implication.
+#
+if ($cxx.id.type == 'clang')
+  cc.coptions += -Wno-mismatched-tags -Wno-missing-braces
 
 # Building against newer SDKs (e.g. the macOS 26 SDK, MVK_XCODE_26) with an
 # older deployment target warns on every reference to a newer symbol

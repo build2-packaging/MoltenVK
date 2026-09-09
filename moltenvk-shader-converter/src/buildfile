@@ -21,5 +21,9 @@ cxx.poptions =+ "-I$src_base"
 # compiles under its own #if MVK_XCODE_26 guard. Disable rather than
 # restructure around @available(), matching libmoltenvk/src/buildfile.
 #
+# -Wno-unused-variable: upstream's MoltenVKShaderConverterTool.cpp declares
+# a handful of _default*ShaderExtns statics that are never referenced
+# anywhere in the file, genuinely dead code, not something to patch.
+#
 if ($cxx.id.type == 'clang')
-  cc.coptions += -Wno-unguarded-availability-new
+  cc.coptions += -Wno-unguarded-availability-new -Wno-unused-variable
