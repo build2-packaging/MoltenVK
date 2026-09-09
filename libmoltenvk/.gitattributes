@@ -7,5 +7,4 @@ src/MoltenVK/Commands symlink=dir
 src/MoltenVK/Layers symlink=dir
 src/MoltenVK/OS symlink=dir
 src/MoltenVK/Utility symlink=dir
-src/MoltenVK/Vulkan symlink=dir
 src/MoltenVKShaderConverter symlink=dir
