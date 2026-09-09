@@ -1,0 +1,8 @@
+include ../shared/
+
+exe{driver-dylib-path}: {hxx ixx txx cxx}{**} ../shared/libue{dylib-path} testscript
+exe{driver-dylib-path}: install = false
+
+cxx.poptions += "-I$src_root/shared"
+
+testscript{*}: exe_dir = $out_base
