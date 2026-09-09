@@ -2,6 +2,17 @@
 :
 : Create a Vulkan instance and device through MoltenVK's ICD entry points,
 : then a compute pipeline from an embedded SPIR-V shader, exercising the
-: MoltenVKShaderConverter/SPIRV-Cross SPIR-V-to-MSL conversion path.
+: MoltenVKShaderConverter/SPIRV-Cross SPIR-V-to-MSL conversion path. On a
+: host with no Metal-capable hardware (e.g. CI), only the --probe-hw
+: diagnostic below is checked.
 :
-$* 2>!
+if $* --probe-hw >! 2>!
+{
+  $* 2>!
+}
+else
+{
+  $* --probe-hw 2>! >>EOO == 1
+  no compatible Metal hardware found
+  EOO
+}

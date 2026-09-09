@@ -1,3 +1,7 @@
 import libs = libmoltenvk%lib{MoltenVK}
 
+# Creates a real VkDevice, which needs actual Metal. testscript probes
+# for it first (see driver.cpp) and falls back to checking just the
+# probe's own diagnostic when running on a host without Metal (e.g. CI).
+#
 exe{driver}: {hxx ixx txx cxx}{**} $libs testscript

@@ -1,9 +1,43 @@
 #include <cstdint>
+#include <cstdio>
+#include <cstring>
+#include <vector>
 
 #include <vulkan/vulkan.h>
 
 #undef NDEBUG
 #include <cassert>
+
+// True iff argv[1] is exactly "--probe-hw".
+//
+static bool
+probing_hardware (int argc, char* argv[])
+{
+  return argc > 1 && std::strcmp (argv[1], "--probe-hw") == 0;
+}
+
+// Prints each Metal-backed physical device's name behind a successfully
+// created instance. Only call this once vkCreateInstance has actually
+// succeeded: MoltenVK's vkCreateInstance itself fails with
+// VK_ERROR_INCOMPATIBLE_DRIVER when no Metal devices are enumerable, so a
+// live instance already guarantees at least one device.
+//
+static void
+print_hardware (VkInstance instance)
+{
+  uint32_t n (0);
+  vkEnumeratePhysicalDevices (instance, &n, nullptr);
+
+  std::vector<VkPhysicalDevice> devs (n);
+  vkEnumeratePhysicalDevices (instance, &n, devs.data ());
+
+  for (VkPhysicalDevice d: devs)
+  {
+    VkPhysicalDeviceProperties p;
+    vkGetPhysicalDeviceProperties (d, &p);
+    std::printf ("%s\n", p.deviceName);
+  }
+}
 
 // Minimal SPIR-V compute shader (GLSL equivalent):
 //
@@ -27,7 +61,7 @@ static const uint32_t noop_compute_spirv[] =
   0x00010038,                                                 // OpFunctionEnd
 };
 
-int main ()
+int main (int argc, char* argv[])
 {
   VkApplicationInfo app_info {};
   app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -38,7 +72,22 @@ int main ()
   ici.pApplicationInfo = &app_info;
 
   VkInstance instance;
-  assert (vkCreateInstance (&ici, nullptr, &instance) == VK_SUCCESS);
+  VkResult r = vkCreateInstance (&ici, nullptr, &instance);
+
+  if (probing_hardware (argc, argv))
+  {
+    if (r != VK_SUCCESS)
+    {
+      std::printf ("no compatible Metal hardware found\n");
+      return 1;
+    }
+
+    print_hardware (instance);
+    vkDestroyInstance (instance, nullptr);
+    return 0;
+  }
+
+  assert (r == VK_SUCCESS);
 
   uint32_t n (0);
   assert (vkEnumeratePhysicalDevices (instance, &n, nullptr) == VK_SUCCESS);
