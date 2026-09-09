@@ -1,0 +1,18 @@
+--- MVKDevice.mm.orig	2026-08-09 22:59:29
++++ MVKDevice.mm	2026-09-08 22:18:24
+@@ -71,6 +71,15 @@
+ 
+ #define supportsGPUFam(gpuFam, mtlDev)  [mtlDev supportsFamily: MTLGPUFamily ##gpuFam]
+ 
++// MTLGPUFamilyApple9 is undeclared on some Xcode 15.0 beta SDKs (it was
++// added mid-cycle, before the final release). An MVK_XCODE_* version check
++// cannot tell such a beta apart from the final SDK it shares a version
++// number with, so supply the missing enumerator (its value is fixed by the
++// public API) instead of gating on a Xcode/SDK version.
++#ifndef MTLGPUFamilyApple9
++#	define MTLGPUFamilyApple9 ((MTLGPUFamily)1009)
++#endif
++
+ #define returnGPUValIf(gpuType, gpuIdx)  if (supports ##gpuType ##gpuIdx) { return gpuIdx; }
+ 
+ uint8_t MVKMTLDeviceCapabilities::getHighestAppleGPU() const {

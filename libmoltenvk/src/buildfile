@@ -40,6 +40,11 @@ import impl_libs += libcereal%lib{cereal}
 
 # Private sources. MoltenVK/API/ is excluded: same files as public headers.
 #
+# MoltenVK/GPUObjects/MVKDevice.mm is a manually patched copy (see
+# .orig/.patch next to it): supplies the MTLGPUFamilyApple9 enumerator when
+# an Xcode 15.0 beta SDK doesn't declare it yet, so the build doesn't fail
+# on beta toolchains older than upstream's own stated Xcode 15.0.1 minimum.
+#
 lib{MoltenVK}: Common/{h cxx m mm}{*}                  \
                MoltenVKShaderConverter/{h cxx m mm}{*} \
                MoltenVK/{h hxx cxx}{** -API/**}        \

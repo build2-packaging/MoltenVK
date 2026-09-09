@@ -4,7 +4,6 @@
 src/Common symlink=dir
 src/MoltenVK/API symlink=dir
 src/MoltenVK/Commands symlink=dir
-src/MoltenVK/GPUObjects symlink=dir
 src/MoltenVK/Layers symlink=dir
 src/MoltenVK/OS symlink=dir
 src/MoltenVK/Utility symlink=dir
