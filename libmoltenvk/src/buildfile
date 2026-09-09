@@ -131,11 +131,13 @@ lib{MoltenVK}:
   cxx.export.libs = $intf_libs
 }
 
-# Apple system frameworks (package is macOS-only; see build/root.build).
+# Apple system frameworks (package is macOS-only, see build/root.build).
+# No -lobjc: Foundation/AppKit pull the runtime in. A bare -lobjc is
+# rewritten to lib{objc}, and Apple ships no static archive (only a .tbd
+# stub), so static consumers fail. Frameworks are passed through as-is.
 #
 cxx.libs += -framework Foundation -framework Metal -framework CoreGraphics \
-            -framework AppKit -framework IOKit -framework IOSurface -framework QuartzCore \
-            -lobjc
+            -framework AppKit -framework IOKit -framework IOSurface -framework QuartzCore
 
 # Frameworks required by installed public headers (mvk_datatypes.h,
 # mvk_private_api.h, mvk_deprecated_api.h).
