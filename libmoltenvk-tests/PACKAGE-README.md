@@ -1,45 +1,30 @@
-# libmoltenvk-tests - An executable
+# libmoltenvk-tests - Vulkan implementation on top of Apple's Metal (tests)
 
-This is a `build2` package for the [`<UPSTREAM-NAME>`](https://<UPSTREAM-URL>)
-executable. It is a <SUMMARY-OF-FUNCTIONALITY>.
+This is a `build2` package containing the test suite for the
+[`MoltenVK`](https://github.com/KhronosGroup/MoltenVK) library. Each
+subdirectory is a separate `exe{driver}` exercising one way of getting a
+`VkInstance` out of MoltenVK through the Khronos loader, sharing the
+device-and-compute-pipeline exercise in `shared/exercise-device.hpp` and
+the `--probe-hw` hardware detection in `shared/hw-probe.hpp` (`libue{}`
+utility libraries, see `shared/buildfile`). This is dev/CI tooling for
+testing an uninstalled `libmoltenvk` out of tree. See `libmoltenvk`'s
+`PACKAGE-README.md` for how a real application should consume it. None
+of these drivers are installed (`install = false`): they exist only for
+`bpkg test`, not as tools or examples for a downstream consumer to run.
 
-Note that the `libmoltenvk-tests` executable in this package provides `build2` metadata.
-
-
-## Usage
-
-To start using `libmoltenvk-tests` in your project, add the following build-time
-`depends` value to your `manifest`, adjusting the version constraint as
-appropriate:
-
-```
-depends: * libmoltenvk-tests ^<VERSION>
-```
-
-Then import the executable in your `buildfile`:
-
-```
-import! [metadata] <TARGET> = libmoltenvk-tests%exe{<TARGET>}
-```
+`icd/`: the ICD path. Link `libvulkan-loader%lib{vulkan}`, import
+`libmoltenvk%libs{MoltenVK}`'s metadata for the ICD json path (and, for a
+separately installed `libmoltenvk`, a `bin.rpath` entry so the loader's
+own `dlopen` of the dylib can find its dependencies), set
+`VK_DRIVER_FILES` for the duration of the test via Testscript `env`, and
+create an instance with portability enumeration enabled.
 
 
 ## Importable targets
 
-This package provides the following importable targets:
-
-```
-exe{<TARGET>}
-```
-
-<DESCRIPTION-OF-IMPORTABLE-TARGETS>
+This package exports no targets.
 
 
 ## Configuration variables
 
-This package provides the following configuration variables:
-
-```
-[bool] config.libmoltenvk_tests.<VARIABLE> ?= false
-```
-
-<DESCRIPTION-OF-CONFIG-VARIABLES>
+This package provides no configuration variables.

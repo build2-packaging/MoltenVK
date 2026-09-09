@@ -1,0 +1,21 @@
+: create-device-and-pipeline-via-icd
+:
+: Create a Vulkan instance through libvulkan-loader with
+: VK_KHR_portability_enumeration. VK_DRIVER_FILES is set for the duration
+: of this one invocation only (Testscript env, hermetic, so it does not
+: pick up a system MoltenVK), from $icd_json (buildfile variable, see
+: ./buildfile). The compiled binary never touches the environment itself.
+: Then a compute pipeline, same as libmoltenvk/tests/basics. On a host
+: with no Metal-capable hardware (e.g. CI), only the --probe-hw
+: diagnostic below is checked.
+:
+if env VK_DRIVER_FILES=$icd_json -- $* --probe-hw >! 2>!
+{
+  env VK_DRIVER_FILES=$icd_json -- $* 2>!
+}
+else
+{
+  env VK_DRIVER_FILES=$icd_json -- $* --probe-hw 2>! >>EOO == 1
+  no compatible Metal hardware found
+  EOO
+}

@@ -15,6 +15,7 @@ topics: graphics, vulkan, metal, c++
 requires: c++17
 requires: macos
 requires: clang ; Objective-C++ and Metal frameworks (GCC is not supported)
+builds: -static ; icd/ and direct-driver-loading/ dlopen libmoltenvk's shared library, which does not exist in a static-only build.
 build-exclude: **-gcc**
 build-include: macos**
 build-exclude: ** ; ICD path through the Vulkan loader, macOS-only.

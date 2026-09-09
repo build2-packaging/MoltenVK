@@ -1,0 +1,35 @@
+import vk = libvulkan-loader%lib{vulkan}
+import! [metadata, rule_hint=cxx.link] icd_meta = libmoltenvk%libs{MoltenVK}
+
+include ../shared/
+
+# Creates a real VkDevice, which needs actual Metal. testscript probes
+# for it first (see driver.cpp) and falls back to checking just the
+# probe's own diagnostic when running on a host without Metal (e.g. CI).
+#
+# icd_meta rather than a direct import of libmoltenvk%json{MoltenVK_icd}:
+# a plain, non-metadata-protocol import of a custom target type cannot
+# cross a sys: package boundary (e.g. CI's test-installed phase, which
+# resolves libmoltenvk via sys:), confirmed by testing against a real
+# installed libmoltenvk. libs{MoltenVK}'s own metadata protocol
+# (rule_hint=cxx.link) does cross it, and libmoltenvk/icd/buildfile
+# piggybacks the ICD json path onto it for exactly this reason.
+#
+exe{driver-icd}: {hxx ixx txx cxx}{**} $vk ../shared/libue{hw-probe} testscript
+exe{driver-icd}: install = false
+
+cxx.poptions += "-I$src_root/shared"
+
+# The loader dlopens libMoltenVK.dylib at runtime (named by $icd_json
+# below), which itself needs to find its own dependencies (e.g.
+# libcpp-base64) via @rpath. dyld resolves @rpath against every loaded
+# image's own LC_RPATH, including this main executable's, so an rpath
+# here is enough even though this exe never links libmoltenvk directly.
+# Same-configuration builds get this for free (cc adds an absolute,
+# build-tree rpath automatically); a separately installed libmoltenvk
+# (e.g. CI's test-installed phase, sys:) does not, hence this explicit
+# one, taken from test_dylib_path since it is always absolute.
+#
+bin.rpath += $directory($($icd_meta: libmoltenvk.test_dylib_path))
+
+testscript{*}: icd_json = $posix_string($($icd_meta: libmoltenvk.icd_json))
