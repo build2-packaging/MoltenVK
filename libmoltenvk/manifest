@@ -18,6 +18,7 @@ requires: clang ; Objective-C++ and Metal frameworks (GCC is not supported)
 build-exclude: **-gcc** ; GCC cannot compile MoltenVK Objective-C++/Metal
 build-include: macos**
 build-exclude: ** ; Layers Vulkan on top of Apple's Metal, macOS-only.
+tests: libmoltenvk-tests == $
 depends: * build2 >= 0.18.0
 depends: * bpkg >= 0.18.0
 

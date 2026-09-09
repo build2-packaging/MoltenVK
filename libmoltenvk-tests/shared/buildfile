@@ -1,0 +1,10 @@
+import intf_libs = libvulkan-loader%lib{vulkan}
+
+# libue{}, not libul{}: every consumer here is an exe{}.
+#
+# Two separate targets: hw-probe (used by icd/, bundle/, direct-driver-loading/)
+# and dylib-path (used only by direct-driver-loading/) are unrelated utilities,
+# and bundling dylib-path into a target named after hw-probe would be misleading.
+#
+libue{hw-probe}:   {hxx cxx}{hw-probe} hxx{exercise-device} $intf_libs
+libue{dylib-path}: {hxx cxx}{dylib-path}

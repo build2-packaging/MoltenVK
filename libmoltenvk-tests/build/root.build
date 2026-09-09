@@ -2,9 +2,15 @@
 #
 #cxx.internal.scope = current
 
-cxx.std = latest
+cxx.std = 17
 
 using cxx
+
+assert ($cxx.target.class == 'macos') \
+  'libmoltenvk-tests is macOS-only'
+
+assert ($cxx.id.type == 'clang') \
+  'libmoltenvk-tests requires clang'
 
 hxx{*}: extension = hpp
 ixx{*}: extension = ipp

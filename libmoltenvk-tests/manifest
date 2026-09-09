@@ -1,15 +1,23 @@
 : 1
 name: libmoltenvk-tests
-version: 0.1.0-a.0.z
+version: 1.4.2-a.0.z
 type: exe
 language: c++
-project: build2-MoltenVK
-summary: libmoltenvk-tests C++ executable
-license: other: proprietary ; Not free/open source.
+project: moltenvk
+summary: Vulkan implementation on top of Apple's Metal (tests)
+license: Apache-2.0
 package-description-file: PACKAGE-README.md
-url: https://example.org/upstream
-email: upstream@example.org
-package-url: https://github.com/build2-packaging/build2-MoltenVK
+url: https://github.com/KhronosGroup/MoltenVK
+src-url: https://github.com/KhronosGroup/MoltenVK
+package-url: https://github.com/build2-packaging/MoltenVK
 package-email: packaging@build2.org ; Mailing list.
+topics: graphics, vulkan, metal, c++
+requires: c++17
+requires: macos
+requires: clang ; Objective-C++ and Metal frameworks (GCC is not supported)
+build-exclude: **-gcc**
+build-include: macos**
+build-exclude: ** ; ICD path through the Vulkan loader, macOS-only.
 depends: * build2 >= 0.18.0
 depends: * bpkg >= 0.18.0
+depends: libvulkan-loader ^1.4.359
