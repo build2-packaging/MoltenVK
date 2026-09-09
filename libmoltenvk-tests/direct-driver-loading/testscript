@@ -1,0 +1,18 @@
+: create-device-and-pipeline-via-direct-driver-loading
+:
+: Create a Vulkan instance via VK_LUNARG_direct_driver_loading: dlopen
+: MoltenVK directly and hand the loader its vk_icdGetInstanceProcAddr, no
+: ICD json, no environment variable. Then a compute pipeline, same as
+: tests/basics. On a host with no Metal-capable hardware (e.g. CI), only
+: the --probe-hw diagnostic below is checked.
+:
+if $* --probe-hw >! 2>!
+{
+  $* 2>!
+}
+else
+{
+  $* --probe-hw 2>! >>EOO == 1
+  no compatible Metal hardware found
+  EOO
+}

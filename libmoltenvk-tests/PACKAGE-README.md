@@ -19,6 +19,17 @@ own `dlopen` of the dylib can find its dependencies), set
 `VK_DRIVER_FILES` for the duration of the test via Testscript `env`, and
 create an instance with portability enumeration enabled.
 
+`direct-driver-loading/`: `VK_LUNARG_direct_driver_loading`. Link
+`libvulkan-loader%lib{vulkan}`, import `libmoltenvk%libs{MoltenVK}`'s
+metadata for the dylib path (never linked), `dlopen` it directly at
+runtime via `shared/dylib-path.{hpp,cpp}`'s `resolve_dylib_path`
+(absolute when `libmoltenvk` is built from source, relative once it is a
+separately installed dependency), and hand the loader
+`vk_icdGetInstanceProcAddr` through `VkInstanceCreateInfo`'s `pNext`
+chain. No json, no environment variable. Requires ICD interface version
+7, which a patched `libmoltenvk/src/MoltenVK/Vulkan/vulkan.mm` reports,
+see [KhronosGroup/MoltenVK#2663](https://github.com/KhronosGroup/MoltenVK/issues/2663).
+
 
 ## Importable targets
 
