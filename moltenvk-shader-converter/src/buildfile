@@ -13,17 +13,20 @@ exe{MoltenVKShaderConverter}: {h cxx mm}{*} $libs
 
 # Flat -I for upstream headers symlinked into src/.
 #
-cxx.poptions =+ "-I$src_base"
+cc.poptions =+ "-I$src_base"
 
-# Building against newer SDKs (e.g. the macOS 26 SDK, MVK_XCODE_26) with an
-# older deployment target warns on every reference to a newer symbol
-# (MTLLanguageVersion4_0 etc.), even when, as here, the reference only
-# compiles under its own #if MVK_XCODE_26 guard. Disable rather than
-# restructure around @available(), matching libmoltenvk/src/buildfile.
-#
-# -Wno-unused-variable: upstream's MoltenVKShaderConverterTool.cpp declares
-# a handful of _default*ShaderExtns statics that are never referenced
-# anywhere in the file, genuinely dead code, not something to patch.
+# After config.cxx.coptions so -Wextra does not re-enable them.
+# unguarded-availability-new: MVK_XCODE_26 vs older deployment target.
+# unused-parameter, unused-variable: macOS-unused OS min-version args,
+# unused _default*ShaderExtns statics.
 #
 if ($cxx.id.type == 'clang')
-  cc.coptions += -Wno-unguarded-availability-new -Wno-unused-variable
+  cxx.coptions += -Wno-unguarded-availability-new \
+                  -Wno-unused-parameter -Wno-unused-variable
+
+# Help text uses '\e' (ASCII ESC) for bold, a GNU/clang extension that
+# -Wpedantic rejects. Scoped to this TU so the rest of the tool stays
+# under the user's pedantic flags.
+#
+if ($cxx.id.type == 'clang')
+  obj{MoltenVKShaderConverterTool}: cxx.coptions += -Wno-pedantic

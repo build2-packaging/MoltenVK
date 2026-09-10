@@ -155,13 +155,9 @@ moltenvk_ipaths = "-I$src_base/Common"              \
                   "-I$src_base/MoltenVK/Vulkan"     \
                   "-I$out_base"
 
-c.poptions   =+ "-I$out_pfx_src" "-I$src_pfx_src" \
-                "-I$out_pfx_inc" "-I$src_pfx_inc" \
-                $moltenvk_ipaths
-
-cxx.poptions =+ "-I$out_pfx_src" "-I$src_pfx_src" \
-                "-I$out_pfx_inc" "-I$src_pfx_inc" \
-                $moltenvk_ipaths
+cc.poptions =+ "-I$out_pfx_src" "-I$src_pfx_src" \
+               "-I$out_pfx_inc" "-I$src_pfx_inc" \
+               $moltenvk_ipaths
 
 log_level_num = ($config.libmoltenvk.log_level == 'off'   ? 0 : \
                   $config.libmoltenvk.log_level == 'error' ? 1 : \
@@ -170,46 +166,25 @@ log_level_num = ($config.libmoltenvk.log_level == 'off'   ? 0 : \
 
 # MVK_FRAMEWORK_VERSION is diagnostic-only (matches upstream package version).
 #
-moltenvk_defs = -DMVK_FRAMEWORK_VERSION=1.4.2 \
-                "-DMVK_CONFIG_LOG_LEVEL=$log_level_num" \
-                "-DMVK_USE_METAL_PRIVATE_API=($config.libmoltenvk.use_metal_private_api ? 1 : 0)"
+cc.poptions += -DMVK_FRAMEWORK_VERSION=1.4.2 \
+               "-DMVK_CONFIG_LOG_LEVEL=$log_level_num" \
+               "-DMVK_USE_METAL_PRIVATE_API=($config.libmoltenvk.use_metal_private_api ? 1 : 0)"
 
-c.poptions   += $moltenvk_defs
-cxx.poptions += $moltenvk_defs
-
-# Match upstream Common/CMakeLists.txt warning disables. Use cc.coptions so
-# the flags also apply to Objective-C++ (.mm), not only pure C++. Match on
-# id.type so both Apple clang (clang-apple) and upstream clang are accepted.
-#
-# -Wno-unknown-warning-option guards this whole, growing list against older
-# clang (e.g. Xcode 15.0 Beta 1's clang 15.0.0 doesn't know
-# -Wno-vla-cxx-extension yet): without it, an unrecognized -Wno-* here is
-# itself a warning, once per translation unit.
+# After config.cxx.coptions so -Wextra does not re-enable them.
+# unknown-warning-option: older clang lacks -Wno-vla-cxx-extension.
+# deprecated-declarations, vla-cxx-extension: upstream CMake.
+# mismatched-tags, missing-braces: harmless upstream patterns.
+# unguarded-availability-new: MVK_XCODE_26 vs older deployment target.
+# unused-parameter, unused-variable: vulkan.mm stubs.
+# ignored-qualifiers: const on by-value returns.
 #
 if ($cxx.id.type == 'clang')
-  cc.coptions += -Wno-unknown-warning-option \
-                 -Wno-deprecated-declarations -Wno-vla-cxx-extension
-
-# Not in upstream's own disables, and not raised by the clang this project
-# is developed against: older clang (Xcode 15.0 Beta 1's clang 15.0.0) is
-# stricter about a couple of upstream code patterns that are otherwise
-# harmless on this project's macOS-only target:
-#  - -Wmismatched-tags: struct/class forward-declaration mismatches, an
-#    MSVC-ABI linker concern that doesn't apply here.
-#  - -Wmissing-braces: nested aggregate-initializer brace elision, a
-#    stylistic nag with no correctness implication.
-#
-if ($cxx.id.type == 'clang')
-  cc.coptions += -Wno-mismatched-tags -Wno-missing-braces
-
-# Building against newer SDKs (e.g. the macOS 26 SDK, MVK_XCODE_26) with an
-# older deployment target warns on every reference to a newer symbol
-# (MTLLanguageVersion4_0 etc.), even when, as here, the reference only
-# compiles under its own #if MVK_XCODE_26 guard. Disable rather than
-# restructure around @available().
-#
-if ($cxx.id.type == 'clang')
-  cc.coptions += -Wno-unguarded-availability-new
+  cxx.coptions += -Wno-unknown-warning-option \
+                  -Wno-deprecated-declarations -Wno-vla-cxx-extension \
+                  -Wno-mismatched-tags -Wno-missing-braces \
+                  -Wno-unguarded-availability-new \
+                  -Wno-unused-parameter -Wno-unused-variable \
+                  -Wno-ignored-qualifiers
 
 # Static revision string for diagnostics (no live git rev-parse).
 #
