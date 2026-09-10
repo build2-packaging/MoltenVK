@@ -1,0 +1,7 @@
+: 1
+name: moltenvk-shader-converter
+version: 1.4.2
+language: c++
+project: moltenvk
+summary: SPIR-V to Metal Shading Language shader converter command-line tool
+license: Apache-2.0
