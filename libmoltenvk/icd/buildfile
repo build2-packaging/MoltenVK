@@ -81,6 +81,12 @@ json{MoltenVK_icd-bundle}: file{MoltenVK_icd-bundle-static.json}@./
 }}
 json{MoltenVK_icd-bundle}: install = data/MoltenVK_icd-bundle.json
 
+# libs{MoltenVK} metadata names this file (icd_json_bundle). Consumers wait
+# on the library, not on this json{} (json{} does not import across sys:),
+# so the library must produce it.
+#
+../src/libs{MoltenVK}: json{MoltenVK_icd-bundle}: include = adhoc
+
 ./: json{MoltenVK_icd-bundle}
 ./: json{MoltenVK_icd}:         include = $shared
 ./: json{MoltenVK_icd-install}: include = $shared
