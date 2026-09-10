@@ -1,0 +1,7 @@
+: 1
+name: libmoltenvk
+version: 1.4.2+1
+language: c++
+project: moltenvk
+summary: Vulkan implementation on top of Apple's Metal
+license: Apache-2.0

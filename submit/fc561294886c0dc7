@@ -1,0 +1,8 @@
+: 1
+name: libmoltenvk-tests
+version: 1.4.2+1
+type: exe
+language: c++
+project: moltenvk
+summary: Vulkan implementation on top of Apple's Metal (tests)
+license: Apache-2.0
