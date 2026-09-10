@@ -30,7 +30,6 @@ h{*}:   extension = h
 test.target = $cxx.target
 
 # Mirrors upstream MVK_USE_METAL_PRIVATE_API / MVK_CONFIG_LOG_LEVEL.
-# SPIRV-Tools is always excluded (not packaged yet).
 #
 config [bool]   config.libmoltenvk.use_metal_private_api ?= false
 config [string] config.libmoltenvk.log_level             ?= 'info'

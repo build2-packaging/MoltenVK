@@ -8,3 +8,16 @@ $* -q -si $spv -mo out.metal &out.metal 2>!;
 sed -n -e 's/.*(kernel void).*/\1/p' out.metal >>EOO
 kernel void
 EOO
+
+: log-spirv-disassembly
+:
+: -l dumps conversion results, including SPIR-V via mvk::logSPIRV().
+: That path calls SPIRV-Tools spvBinaryToText unless
+: MVK_EXCLUDE_SPIRV_TOOLS is defined, in which case the log contains
+: the "unavailable" stub instead of OpCapability.
+:
+$* -l -si $spv -mo out-log.metal &out-log.metal >>~/EOO/
+/.*
+/.*OpCapability.*/
+/.*
+EOO

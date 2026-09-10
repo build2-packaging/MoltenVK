@@ -90,10 +90,15 @@ import impl_libs += libspirv-cross%liba{spirv-cross-core}    \
                     libspirv-cross%liba{spirv-cross-msl}     \
                     libspirv-cross%liba{spirv-cross-reflect}
 
+# SPIRV-Tools is used only from SPIRVSupport.cpp (logSPIRV disassembly).
+# Always linked, matching upstream MVK_EXCLUDE_SPIRV_TOOLS default of off (the
+# exclude define is a presence test, so it is omitted rather than set to 0).
+#
 # cereal is used only from MVKPipeline.mm (pipeline cache serialization).
 # Always linked, matching upstream MVK_EXCLUDE_CEREAL default of off.
 #
-import impl_libs += libcereal%lib{cereal}
+import impl_libs += libspirv-tools%lib{SPIRV-Tools} \
+                    libcereal%lib{cereal}
 
 # Private sources. MoltenVK/API/ is excluded: same files as public headers.
 #
@@ -167,8 +172,7 @@ log_level_num = ($config.libmoltenvk.log_level == 'off'   ? 0 : \
 #
 moltenvk_defs = -DMVK_FRAMEWORK_VERSION=1.4.2 \
                 "-DMVK_CONFIG_LOG_LEVEL=$log_level_num" \
-                "-DMVK_USE_METAL_PRIVATE_API=($config.libmoltenvk.use_metal_private_api ? 1 : 0)" \
-                -DMVK_EXCLUDE_SPIRV_TOOLS=1
+                "-DMVK_USE_METAL_PRIVATE_API=($config.libmoltenvk.use_metal_private_api ? 1 : 0)"
 
 c.poptions   += $moltenvk_defs
 cxx.poptions += $moltenvk_defs

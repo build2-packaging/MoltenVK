@@ -282,7 +282,3 @@ safe).
 
 `config.libmoltenvk.log_level` mirrors upstream's `MVK_CONFIG_LOG_LEVEL`.
 Valid values are `debug`, `info`, `warn`, `error`, and `off`.
-
-`SPIRV-Tools` integration is always excluded in this package
-(`MVK_EXCLUDE_SPIRV_TOOLS=1`). Enabling it requires `SPIRV-Tools` and
-`SPIRV-Headers` packages that are not available yet.
