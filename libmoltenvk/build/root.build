@@ -2,10 +2,10 @@
 #
 #cxx.internal.scope = current
 
-# Match upstream CMAKE_CXX_STANDARD=17. Under cxx.std=latest, Apple SDK
-# CoreGraphics/ColorSync headers fail (enum arithmetic errors).
+# Apple SDK headers currently reject C++23/26 enum arithmetic.
 #
-cxx.std = 17
+using cxx.guess
+cxx.std = ($cxx.target.class == 'macos' ? 20 : latest)
 
 using c
 using c.objc   # MTLSamplerDescriptor+MoltenVK.m and friends (plain Objective-C).

@@ -2,10 +2,10 @@
 #
 #cxx.internal.scope = current
 
-# No MoltenVK public headers that pull broken Apple SDK paths under later
-# language standards, so latest is fine here (libmoltenvk pins to 17).
+# Apple SDK headers currently reject C++23/26 enum arithmetic.
 #
-cxx.std = latest
+using cxx.guess
+cxx.std = ($cxx.target.class == 'macos' ? 20 : latest)
 
 using cxx
 using cxx.objcxx # OSSupport.mm is Objective-C++.
