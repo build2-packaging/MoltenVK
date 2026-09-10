@@ -1,4 +1,5 @@
-import  vk = libvulkan-loader%lib{vulkan}
+import  vk   = libvulkan-loader%lib{vulkan}
+import  util = libmoltenvk%lib{mvk-direct-util}
 import! [metadata, rule_hint=cxx.link] dylib_meta = libmoltenvk%libs{MoltenVK}
 
 include ../shared/
@@ -15,13 +16,13 @@ include ../shared/
 # build/update that target on its own, which no rule can do for a
 # sys:-resolved library (confirmed by testing against a real installed
 # libmoltenvk). libmoltenvk-tests already depends on libmoltenvk as a
-# whole package, so a normal project build already updates the dylib;
-# this only gives up detecting a dylib-only change with no other edits
+# whole package, so a normal project build already updates the dylib.
+# This only gives up detecting a dylib-only change with no other edits
 # as reason to rerun this specific test, same tradeoff as
 # ../icd/buildfile.
 #
 exe{driver-direct-driver-loading}: \
-  {hxx ixx txx cxx}{**} $vk ../shared/libue{hw-probe} ../shared/libue{dylib-path} testscript
+  {hxx ixx txx cxx}{**} $vk $util ../shared/libue{hw-probe} testscript
 exe{driver-direct-driver-loading}: install = false
 
 cxx.poptions += "-DMVK_DYLIB_PATH=\"$posix_string($($dylib_meta: libmoltenvk.dylib_path))\"" \
@@ -33,7 +34,7 @@ cxx.poptions += "-DMVK_DYLIB_PATH=\"$posix_string($($dylib_meta: libmoltenvk.dyl
 # looks up against every loaded image's LC_RPATH, including this main
 # executable's, even though it never links libmoltenvk directly.
 # Same-configuration builds get this for free (cc adds an absolute,
-# build-tree rpath automatically); a separately installed libmoltenvk
+# build-tree rpath automatically). A separately installed libmoltenvk
 # (e.g. CI's test-installed phase, sys:) does not, hence this explicit
 # one, taken from test_dylib_path since it is always absolute.
 #

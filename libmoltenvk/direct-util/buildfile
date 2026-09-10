@@ -1,0 +1,33 @@
+intf_libs = # Interface dependencies.
+import intf_libs += libvulkan-headers%lib{vulkan-headers}
+
+# Recommended helper for VK_LUNARG_direct_driver_loading. Does not
+# link lib{MoltenVK} (vk* would collide with the Khronos loader).
+#
+lib{mvk-direct-util}: {hxx cxx}{**} $intf_libs
+
+# Consumers write #include <mvk-direct-util/mvk-direct-util.hpp>.
+#
+cxx.poptions =+ "-I$out_base" "-I$src_base"
+
+lib{mvk-direct-util}:
+{
+  cxx.export.poptions = "-I$out_base" "-I$src_base"
+  cxx.export.libs     = $intf_libs
+}
+
+lib{mvk-direct-util}: cxx.pkgconfig.include = include/
+
+if $version.pre_release
+  lib{mvk-direct-util}: bin.lib.version = "-$version.project_id"
+else
+  lib{mvk-direct-util}: bin.lib.version = "-$version.major.$version.minor"
+
+# Install into include/mvk-direct-util/, recreating the subdirectory
+# of $src_base so the public include path matches the source tree.
+#
+hxx{*}:
+{
+  install         = include/
+  install.subdirs = true
+}

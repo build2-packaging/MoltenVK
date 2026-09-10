@@ -3,7 +3,7 @@
 : resolve_dylib_path must join a relative path with this executable's
 : own directory and normalize it, the contract an installed,
 : config.install.relocatable=true consumer relies on (see
-: ../direct-driver-loading and ../../libmoltenvk/PACKAGE-README.md's
+: ../direct-driver-loading and libmoltenvk/PACKAGE-README.md's
 : "Direct driver loading mode"). Stage a marker file at the expected
 : relative location, relative to $exe_dir (this test's own build
 : output directory, where the executable itself also lives), matching

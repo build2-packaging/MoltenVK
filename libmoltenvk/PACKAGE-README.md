@@ -31,9 +31,10 @@ depends: libmoltenvk ^1.4.2 ? ($cxx.target.class == 'macos')
 
 ```
 import  vk    = libvulkan-loader%lib{vulkan}
+import  util  = libmoltenvk%lib{mvk-direct-util}
 import! [metadata, rule_hint=cxx.link] dylib = libmoltenvk%libs{MoltenVK}
 
-exe{app}: cxx{main} $vk
+exe{app}: cxx{main} $vk $util
 exe{app}: $dylib: include = adhoc
 
 cxx.poptions += "-DMVK_DYLIB_PATH=\"$posix_string($($dylib: libmoltenvk.dylib_path))\""
@@ -43,67 +44,35 @@ cxx.poptions += "-DMVK_DYLIB_PATH=\"$posix_string($($dylib: libmoltenvk.dylib_pa
 [metadata, rule_hint=cxx.link]`), never linked, so its `vk*` symbols
 never enter the image (the extension exists specifically for drivers
 like MoltenVK that also implement the full Vulkan API surface, where a
-normal link would collide with the loader's own symbols). At runtime,
-`dlopen` the dylib with `RTLD_LOCAL` (keeping its symbols out of the
-process-wide namespace too), resolve `vk_icdGetInstanceProcAddr` via
-`dlsym`, and pass it to the loader through `VkInstanceCreateInfo`'s
-`pNext` chain:
+normal link would collide with the loader's own symbols).
+`lib{mvk-direct-util}` is the recommended helper for this mode: it
+`dlopen`s the dylib with `RTLD_LOCAL` (keeping its symbols out of the
+process-wide namespace too), resolves `vk_icdGetInstanceProcAddr` via
+`dlsym`, and fills a `VkDirectDriverLoadingListLUNARG` for
+`VkInstanceCreateInfo`'s `pNext` chain. It does not link `lib{MoltenVK}`.
 
 ```cpp
-#include <climits>
-#include <filesystem>
-#include <mach-o/dyld.h>
+#include <mvk-direct-util/mvk-direct-util.hpp>
 
-// MVK_DYLIB_PATH (libmoltenvk.dylib_path) is absolute when libmoltenvk
-// is built from source: dlopen it as-is. Once libmoltenvk is a
-// separately installed (sys:) dependency it is instead a path
-// relative to this executable's own install location, so a
-// relocatable prefix still works - but dlopen of a relative path is
-// resolved against the process' current working directory (POSIX),
-// not the binary, and an installed app can be launched from any cwd.
-// Complete it against the executable's own location first.
-//
-std::string resolve_dylib_path (const char* path)
-{
-  namespace fs = std::filesystem;
-  if (fs::path (path).is_absolute ())
-    return path;
+mvk_direct_util::direct_driver mvk;
+if (!mvk_direct_util::open (mvk, MVK_DYLIB_PATH))
+  abort ();
 
-  char exe_path[PATH_MAX];
-  uint32_t size = sizeof (exe_path);
-  if (_NSGetExecutablePath (exe_path, &size) != 0)
-    return path; // PATH_MAX is always big enough for _NSGetExecutablePath.
-
-  return (fs::path (exe_path).parent_path () / path).lexically_normal ().string ();
-}
-
-void* handle = dlopen (resolve_dylib_path (MVK_DYLIB_PATH).c_str (), RTLD_NOW | RTLD_LOCAL);
-auto  get_proc_addr = (pfn_vk_icdGetInstanceProcAddr)
-  dlsym (handle, "vk_icdGetInstanceProcAddr");
-
-VkDirectDriverLoadingInfoLUNARG ddli {};
-ddli.sType = VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_INFO_LUNARG;
-ddli.pfnGetInstanceProcAddr = (PFN_vkGetInstanceProcAddrLUNARG) get_proc_addr;
-
-VkDirectDriverLoadingListLUNARG ddll {};
-ddll.sType = VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_LIST_LUNARG;
-ddll.mode = VK_DIRECT_DRIVER_LOADING_MODE_EXCLUSIVE_LUNARG;
-ddll.driverCount = 1;
-ddll.pDrivers = &ddli;
-
-// VkInstanceCreateInfo.pNext = &ddll;
+// VkInstanceCreateInfo.pNext = &mvk.list;
 ```
 
-The relative-path case only arises once libmoltenvk is resolved via
-`sys:` (a separately installed dependency); building it from source
-alongside the application always yields the absolute path. Resolve it
-regardless - it is then a no-op, and stays correct if the dependency is
-later switched to `sys:`.
+`open()` always runs `resolve_dylib_path` first. `MVK_DYLIB_PATH`
+(`libmoltenvk.dylib_path`) is absolute when libmoltenvk is built from
+source (a no-op) and relative to this executable once libmoltenvk is a
+separately installed (`sys:`) dependency. `dlopen` of a relative path
+is against cwd, not the binary, so the helper completes it against the
+executable location.
+
+Keep `mvk` alive across `vkCreateInstance` (`list.pDrivers` points at
+`mvk.info`).
 
 See `libmoltenvk-tests/direct-driver-loading/` for a complete, working
-example covering both paths, and
-`libmoltenvk-tests/shared/dylib-path.{hpp,cpp}` for the reference
-implementation the snippet above matches.
+example covering both paths.
 
 This extension is designed by LunarG specifically for API translation
 layers like MoltenVK. It requires ICD interface version 7, which this
@@ -244,6 +213,7 @@ This package provides the following importable targets:
 ```
 lib{MoltenVK}
 libs{MoltenVK}
+lib{mvk-direct-util}
 json{MoltenVK_icd}
 json{MoltenVK_icd-bundle}
 ```
@@ -255,6 +225,11 @@ driver loading mode: imported with `import! [metadata, rule_hint=cxx.link]`
 and added as an adhoc prerequisite (never linked), it exports
 `libmoltenvk.dylib_path` metadata giving the dylib's path for `dlopen`. See
 "Direct driver loading mode" above for the complete example.
+
+`lib{mvk-direct-util}` is the recommended helper for that same mode
+(resolve the dylib path, `dlopen`, fill the loader `pNext` chain). It
+is not a substitute for `lib{MoltenVK}` or the Khronos loader, and it
+does not link `lib{MoltenVK}`.
 
 `json{MoltenVK_icd}` is the out-of-tree ICD manifest. It exists for this
 project's own out-of-tree testing (see `libmoltenvk-tests/icd/`) and is
