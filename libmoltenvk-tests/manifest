@@ -1,6 +1,6 @@
 : 1
 name: libmoltenvk-tests
-version: 1.4.2-a.0.z
+version: 1.4.2
 type: exe
 language: c++
 project: moltenvk
